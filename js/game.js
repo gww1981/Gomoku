@@ -189,13 +189,13 @@ function fileToDataURL(file) {
  */
 class AudioManager {
   constructor() {
-    // 预设音乐配置
+    // 预设音乐配置 (Wikimedia Commons 公共领域音乐)
     this.PRESET_MUSIC = {
-      'preset-1': { name: '宁静森林', url: 'https://cdn.pixabay.com/audio/2022/03/10/audio_c9fce879de.mp3' },
-      'preset-2': { name: '古典时光', url: 'https://cdn.pixabay.com/audio/2021/11/14/audio_1f6a5ef7c6.mp3' },
-      'preset-3': { name: '东方禅意', url: 'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c21.mp3' },
-      'preset-4': { name: '暮光之城', url: 'https://cdn.pixabay.com/audio/2024/01/18/audio_0f9c8e3b3e.mp3' },
-      'preset-5': { name: '夏日午后', url: 'https://cdn.pixabay.com/audio/2023/06/30/audio_d8e7f0c1a2.mp3' }
+      'preset-1': { name: '宁静森林', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Kevin_MacLeod_-_Soft_Focus.ogg' },
+      'preset-2': { name: '古典时光', url: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Kevin_MacLeod_-_French_Folk.ogg' },
+      'preset-3': { name: '东方禅意', url: 'https://upload.wikimedia.org/wikipedia/commons/2/21/Kevin_MacLeod_-_Wonderworld.ogg' },
+      'preset-4': { name: '暮光之城', url: 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Kevin_MacLeod_-_Mysterious_Magma.ogg' },
+      'preset-5': { name: '夏日午后', url: 'https://upload.wikimedia.org/wikipedia/commons/a/a8/Kevin_MacLeod_-_Beach.ogg' }
     };
 
     // 存储键
