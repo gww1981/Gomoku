@@ -280,3 +280,77 @@ function restartGame() {
 
 // 页面加载完成后初始化游戏
 document.addEventListener('DOMContentLoaded', initGame);
+
+// 背景设置弹窗逻辑
+function initSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    const settingsBtn = document.getElementById('settings');
+    const closeBtn = document.getElementById('close-modal');
+    const bgOptions = document.querySelectorAll('.bg-option');
+    const uploadBtn = document.getElementById('upload-btn');
+    const fileInput = document.getElementById('bg-upload');
+
+    // 打开弹窗
+    settingsBtn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+        updateSelectedBg();
+    });
+
+    // 关闭弹窗
+    closeBtn.addEventListener('click', () => {
+        modal.classList.add('hidden');
+    });
+
+    // 点击遮罩关闭
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.classList.add('hidden');
+        }
+    });
+
+    // 选择预设背景
+    bgOptions.forEach(option => {
+        option.addEventListener('click', async () => {
+            const bgValue = option.dataset.bg;
+            applyBackground(bgValue);
+            saveBackgroundSetting(bgValue);
+            updateSelectedBg();
+        });
+    });
+
+    // 上传背景
+    uploadBtn.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const dataUrl = await fileToDataURL(file);
+            applyBackground(dataUrl);
+            saveBackgroundSetting(dataUrl);
+            updateSelectedBg();
+        } catch (err) {
+            alert(err.message);
+        }
+        // 清空 input 以允许重新选择同一文件
+        fileInput.value = '';
+    });
+
+    // 更新选中状态
+    function updateSelectedBg() {
+        const currentBg = localStorage.getItem(STORAGE_KEY);
+        bgOptions.forEach(option => {
+            if (option.dataset.bg === currentBg) {
+                option.classList.add('selected');
+            } else {
+                option.classList.remove('selected');
+            }
+        });
+    }
+}
+
+// 页面加载时初始化设置弹窗
+document.addEventListener('DOMContentLoaded', initSettingsModal);
