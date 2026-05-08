@@ -189,13 +189,13 @@ function fileToDataURL(file) {
  */
 class AudioManager {
   constructor() {
-    // 预设音乐配置 (Wikimedia Commons 公共领域音乐)
+    // 预设音乐配置（使用 SoundHelix 免费样本）
     this.PRESET_MUSIC = {
-      'preset-1': { name: '宁静森林', url: 'https://upload.wikimedia.org/wikipedia/commons/7/7a/Kevin_MacLeod_-_Soft_Focus.ogg' },
-      'preset-2': { name: '古典时光', url: 'https://upload.wikimedia.org/wikipedia/commons/3/3a/Kevin_MacLeod_-_French_Folk.ogg' },
-      'preset-3': { name: '东方禅意', url: 'https://upload.wikimedia.org/wikipedia/commons/2/21/Kevin_MacLeod_-_Wonderworld.ogg' },
-      'preset-4': { name: '暮光之城', url: 'https://upload.wikimedia.org/wikipedia/commons/1/1a/Kevin_MacLeod_-_Mysterious_Magma.ogg' },
-      'preset-5': { name: '夏日午后', url: 'https://upload.wikimedia.org/wikipedia/commons/a/a8/Kevin_MacLeod_-_Beach.ogg' }
+      'preset-1': { name: '宁静森林', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+      'preset-2': { name: '古典时光', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+      'preset-3': { name: '东方禅意', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+      'preset-4': { name: '暮光之城', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+      'preset-5': { name: '夏日午后', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' }
     };
 
     // 存储键
