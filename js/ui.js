@@ -11,7 +11,9 @@ const GameState = {
   mode: 'pvp',          // 'pvp' 双人或 'ai' 人机
   difficulty: 'medium',  // 'easy', 'medium', 'hard'
   isGameOver: false,    // 游戏是否结束
-  isAIThinking: false   // AI 是否正在思考
+  isAIThinking: false,  // AI 是否正在思考
+  moveHistory: [],      // 落子记录 [{row, col, player}, ...]
+  isReplaying: false    // 回放状态标志
 };
 
 /**
@@ -20,6 +22,9 @@ const GameState = {
 function initGame() {
   // 初始化音频管理器
   initAudioManager();
+
+  // 初始化录像管理器
+  initReplayManager();
 
   GameState.board = new Board(BOARD_SIZE);
   GameState.isGameOver = false;
@@ -102,6 +107,9 @@ function handleBoardClick(e) {
   // 游戏结束或 AI 正在思考时忽略点击
   if (GameState.isGameOver || GameState.isAIThinking) return;
 
+  // 回放状态时忽略点击
+  if (GameState.isReplaying) return;
+
   const cell = e.target.closest('.cell');
   if (!cell) return;
 
@@ -124,6 +132,13 @@ function placeStone(row, col) {
   if (!GameState.board.placeStone(row, col, currentPlayer)) {
     return; // 落子失败（位置已有棋子或超出边界）
   }
+
+  // 记录落子
+  GameState.moveHistory.push({
+    row,
+    col,
+    player: currentPlayer
+  });
 
   // 更新棋盘显示
   updateCellDisplay(row, col, currentPlayer);
@@ -209,6 +224,15 @@ function handleWin(player, winLine) {
     status.className = 'status win';
   }
 
+  // 保存录像
+  if (window.replayManager) {
+    window.replayManager.saveReplay(
+      GameState.mode,
+      GameState.difficulty,
+      GameState.moveHistory
+    );
+  }
+
   updateRestartButton();
 }
 
@@ -222,6 +246,15 @@ function handleDraw() {
   if (status) {
     status.textContent = '游戏结束，平局！';
     status.className = 'status draw';
+  }
+
+  // 保存录像
+  if (window.replayManager) {
+    window.replayManager.saveReplay(
+      GameState.mode,
+      GameState.difficulty,
+      GameState.moveHistory
+    );
   }
 
   updateRestartButton();
@@ -272,6 +305,7 @@ function restartGame() {
   GameState.board.reset();
   GameState.isGameOver = false;
   GameState.isAIThinking = false;
+  GameState.moveHistory = [];
 
   // 清空棋盘显示
   const cells = document.querySelectorAll('.cell');
@@ -468,4 +502,43 @@ function initSettingsModalTabs() {
       });
     });
   });
+}
+
+/**
+ * 开始录像回放
+ */
+function startReplay(replayId) {
+  const replayManager = window.replayManager;
+  if (!replayManager) return;
+
+  // 重置棋盘
+  GameState.board.reset();
+  const cells = document.querySelectorAll('.cell');
+  cells.forEach(cell => { cell.className = 'cell'; });
+
+  GameState.isReplaying = true;
+
+  const status = document.getElementById('status');
+  if (status) {
+    status.textContent = '录像回放中...';
+    status.className = 'status';
+  }
+
+  replayManager.startReplay(
+    replayId,
+    // onStep
+    (move) => {
+      updateCellDisplay(move.row, move.col, move.player);
+    },
+    // onComplete
+    () => {
+      GameState.isReplaying = false;
+      GameState.moveHistory = [];
+      const status = document.getElementById('status');
+      if (status) {
+        status.textContent = '回放结束';
+        status.className = 'status';
+      }
+    }
+  );
 }
