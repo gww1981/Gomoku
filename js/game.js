@@ -147,17 +147,26 @@ function applyBackground(bgValue) {
 
 // 保存背景设置到 localStorage
 function saveBackgroundSetting(bgValue) {
-    localStorage.setItem(STORAGE_KEY, bgValue);
+    try {
+        localStorage.setItem(STORAGE_KEY, bgValue);
+    } catch (e) {
+        console.warn('无法保存背景设置:', e);
+    }
 }
 
 // 从 localStorage 加载背景设置
 function loadBackgroundSetting() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        applyBackground(saved);
-        return saved;
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            applyBackground(saved);
+            return saved;
+        }
+        return null;
+    } catch (e) {
+        console.warn('无法加载背景设置:', e);
+        return null;
     }
-    return null;
 }
 
 // 将文件转为 Base64 DataURL
