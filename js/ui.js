@@ -58,14 +58,15 @@ function createBoardDOM() {
  * 绑定页面元素事件
  */
 function bindEvents() {
-  // 模式切换
-  const modeSelect = document.getElementById('mode');
-  if (modeSelect) {
-    modeSelect.addEventListener('change', (e) => {
-      GameState.mode = e.target.value;
+  // 模式切换（使用 button）
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      GameState.mode = e.target.dataset.mode;
       restartGame();
     });
-  }
+  });
 
   // 难度选择
   const difficultySelect = document.getElementById('difficulty');
@@ -175,7 +176,7 @@ function updateCellDisplay(row, col, player) {
 
   // 添加棋子样式
   cell.classList.add('occupied');
-  cell.classList.add(player === 1 ? 'black' : 'white');
+  cell.classList.add(player === 1 ? 'stone-black' : 'stone-white');
 }
 
 /**
@@ -190,7 +191,7 @@ function handleWin(player, winLine) {
   winLine.forEach(pos => {
     const cell = document.querySelector(`.cell[data-row="${pos.row}"][data-col="${pos.col}"]`);
     if (cell) {
-      cell.classList.add('win');
+      cell.classList.add('stone-winning');
     }
   });
 
