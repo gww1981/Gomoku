@@ -202,7 +202,7 @@ function evaluateBoard(board, player) {
         if (piecePlayer === player) {
           score += pieceScore;
         } else {
-          score -= pieceScore * 1.1; // 对手威胁加权
+          score -= pieceScore * 1.1; // 对手威胁加权（略高于己方以优先防守）
         }
       }
     }
@@ -256,7 +256,7 @@ function minimax(board, depth, alpha, beta, isMaximizing, player) {
   }
 
   const candidates = getCandidateMoves(board);
-  if (candidates.length === 0 || depth < 4) {
+  if (candidates.length === 0) {
     return { score: evaluateBoard(board, AI_PLAYER), move: null };
   }
 
