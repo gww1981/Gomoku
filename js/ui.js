@@ -3,8 +3,7 @@
  * 负责模式切换、难度选择、落子事件、重新开始、回合提示、胜负提示
  */
 
-// 棋盘大小常量
-const BOARD_SIZE = 15;
+// BOARD_SIZE from game.js
 
 // 游戏状态对象
 const GameState = {

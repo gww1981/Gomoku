@@ -122,3 +122,6 @@ class Board {
     return this.isFull();
   }
 }
+
+// 全局常量，供其他模块使用
+window.BOARD_SIZE = 15;

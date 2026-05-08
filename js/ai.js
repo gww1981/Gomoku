@@ -6,7 +6,8 @@
 const AI_PLAYER = 2;
 const PLAYER = 1;
 const EMPTY = 0;
-const BOARD_SIZE = 15;
+
+// BOARD_SIZE from game.js
 
 // 方向向量：水平、垂直、左斜、右斜
 const DIRECTIONS = [
