@@ -125,3 +125,60 @@ class Board {
 
 // 全局常量，供其他模块使用
 window.BOARD_SIZE = 15;
+
+// 预设背景配置
+const PRESET_BACKGROUNDS = {
+    'preset-1': 'https://images.unsplash.com/photo-1549490349-8643362247b5?w=1920',
+    'preset-2': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920',
+    'preset-3': 'https://images.unsplash.com/photo-1563865436874-9aef32095fad?w=1920',
+    'preset-4': 'https://images.unsplash.com/photo-1518562180175-34a163b1a9a6?w=1920'
+};
+const STORAGE_KEY = 'gomoku_background';
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+// 应用背景图片
+function applyBackground(bgValue) {
+    if (PRESET_BACKGROUNDS[bgValue]) {
+        document.body.style.backgroundImage = `url('${PRESET_BACKGROUNDS[bgValue]}')`;
+    } else if (bgValue.startsWith('data:')) {
+        document.body.style.backgroundImage = `url('${bgValue}')`;
+    }
+}
+
+// 保存背景设置到 localStorage
+function saveBackgroundSetting(bgValue) {
+    try {
+        localStorage.setItem(STORAGE_KEY, bgValue);
+    } catch (e) {
+        console.warn('无法保存背景设置:', e);
+    }
+}
+
+// 从 localStorage 加载背景设置
+function loadBackgroundSetting() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            applyBackground(saved);
+            return saved;
+        }
+        return null;
+    } catch (e) {
+        console.warn('无法加载背景设置:', e);
+        return null;
+    }
+}
+
+// 将文件转为 Base64 DataURL
+function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        if (file.size > MAX_FILE_SIZE) {
+            reject(new Error('图片大小不能超过 2MB'));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
