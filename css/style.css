@@ -618,3 +618,89 @@ body {
   width: 120px;
   accent-color: var(--win-glow);
 }
+<<<<<<< HEAD
+=======
+
+/* 录像列表 */
+.replay-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.replay-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.replay-item:hover {
+  background: rgba(255,255,255,0.8);
+}
+
+.replay-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.replay-mode {
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.replay-mode.ai {
+  color: #e67e22;
+}
+
+.replay-mode.pvp {
+  color: #3498db;
+}
+
+.replay-meta {
+  font-size: 11px;
+  color: #666;
+}
+
+.replay-delete {
+  padding: 4px 8px;
+  background: transparent;
+  border: 1px solid #e74c3c;
+  color: #e74c3c;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.replay-delete:hover {
+  background: #e74c3c;
+  color: white;
+}
+
+.replay-empty {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+}
+
+.btn-danger {
+  width: 100%;
+  padding: 8px;
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+>>>>>>> 7978abf465fd598588e590e1052b40f0f9f322c1
