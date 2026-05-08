@@ -3,20 +3,25 @@
  * 负责模式切换、难度选择、落子事件、重新开始、回合提示、胜负提示
  */
 
-// 游戏状态
-let board = null;           // Board 实例
-let gameMode = 'pvp';       // 'pvp' 双人或 'ai' 人机
-let difficulty = 'medium';  // 'easy', 'medium', 'hard'
-let isGameOver = false;     // 游戏是否结束
-let isAIThinking = false;   // AI 是否正在思考
+// 棋盘大小常量
+const BOARD_SIZE = 15;
+
+// 游戏状态对象
+const GameState = {
+  board: null,           // Board 实例
+  mode: 'pvp',          // 'pvp' 双人或 'ai' 人机
+  difficulty: 'medium',  // 'easy', 'medium', 'hard'
+  isGameOver: false,    // 游戏是否结束
+  isAIThinking: false   // AI 是否正在思考
+};
 
 /**
  * 初始化游戏
  */
 function initGame() {
-  board = new Board(15);
-  isGameOver = false;
-  isAIThinking = false;
+  GameState.board = new Board(BOARD_SIZE);
+  GameState.isGameOver = false;
+  GameState.isAIThinking = false;
 
   // 创建棋盘 DOM
   createBoardDOM();
@@ -38,8 +43,8 @@ function createBoardDOM() {
 
   boardElement.innerHTML = '';
 
-  for (let row = 0; row < 15; row++) {
-    for (let col = 0; col < 15; col++) {
+  for (let row = 0; row < BOARD_SIZE; row++) {
+    for (let col = 0; col < BOARD_SIZE; col++) {
       const cell = document.createElement('div');
       cell.className = 'cell';
       cell.dataset.row = row;
@@ -57,7 +62,7 @@ function bindEvents() {
   const modeSelect = document.getElementById('mode');
   if (modeSelect) {
     modeSelect.addEventListener('change', (e) => {
-      gameMode = e.target.value;
+      GameState.mode = e.target.value;
       restartGame();
     });
   }
@@ -66,7 +71,7 @@ function bindEvents() {
   const difficultySelect = document.getElementById('difficulty');
   if (difficultySelect) {
     difficultySelect.addEventListener('change', (e) => {
-      difficulty = e.target.value;
+      GameState.difficulty = e.target.value;
     });
   }
 
@@ -89,7 +94,7 @@ function bindEvents() {
  */
 function handleBoardClick(e) {
   // 游戏结束或 AI 正在思考时忽略点击
-  if (isGameOver || isAIThinking) return;
+  if (GameState.isGameOver || GameState.isAIThinking) return;
 
   const cell = e.target.closest('.cell');
   if (!cell) return;
@@ -108,9 +113,9 @@ function handleBoardClick(e) {
  */
 function placeStone(row, col) {
   // 检查是否能落子
-  const currentPlayer = board.currentPlayer;
+  const currentPlayer = GameState.board.currentPlayer;
 
-  if (!board.placeStone(row, col, currentPlayer)) {
+  if (!GameState.board.placeStone(row, col, currentPlayer)) {
     return; // 落子失败（位置已有棋子或超出边界）
   }
 
@@ -118,14 +123,14 @@ function placeStone(row, col) {
   updateCellDisplay(row, col, currentPlayer);
 
   // 检查胜负
-  const winLine = board.checkWin(row, col);
+  const winLine = GameState.board.checkWin(row, col);
   if (winLine) {
     handleWin(currentPlayer, winLine);
     return;
   }
 
   // 检查平局
-  if (board.checkDraw()) {
+  if (GameState.board.checkDraw()) {
     handleDraw();
     return;
   }
@@ -134,7 +139,7 @@ function placeStone(row, col) {
   updateStatus();
 
   // 如果是人机模式且是 AI 回合
-  if (gameMode === 'ai' && board.currentPlayer === 2) {
+  if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
     triggerAIMove();
   }
 }
@@ -143,18 +148,18 @@ function placeStone(row, col) {
  * 触发 AI 落子
  */
 function triggerAIMove() {
-  isAIThinking = true;
+  GameState.isAIThinking = true;
   updateStatus(); // 显示 AI 正在思考
 
   // 使用 setTimeout 模拟思考过程，避免阻塞 UI
   setTimeout(() => {
-    const aiMove = getAIMove(board.grid, difficulty);
+    const aiMove = getAIMove(GameState.board.grid, GameState.difficulty);
 
     if (aiMove) {
       placeStone(aiMove.row, aiMove.col);
     }
 
-    isAIThinking = false;
+    GameState.isAIThinking = false;
   }, 500);
 }
 
@@ -179,7 +184,7 @@ function updateCellDisplay(row, col, player) {
  * @param {Array} winLine - 获胜连线
  */
 function handleWin(player, winLine) {
-  isGameOver = true;
+  GameState.isGameOver = true;
 
   // 高亮获胜连线
   winLine.forEach(pos => {
@@ -193,7 +198,7 @@ function handleWin(player, winLine) {
   const status = document.getElementById('status');
   if (status) {
     const playerName = player === 1 ? '黑方' : '白方';
-    const modeText = gameMode === 'ai' ? (player === 1 ? '你' : 'AI') : playerName;
+    const modeText = GameState.mode === 'ai' ? (player === 1 ? '你' : 'AI') : playerName;
     status.textContent = `游戏结束，${modeText}获胜！`;
     status.className = 'status win';
   }
@@ -205,7 +210,7 @@ function handleWin(player, winLine) {
  * 处理平局
  */
 function handleDraw() {
-  isGameOver = true;
+  GameState.isGameOver = true;
 
   const status = document.getElementById('status');
   if (status) {
@@ -223,18 +228,18 @@ function updateStatus() {
   const status = document.getElementById('status');
   if (!status) return;
 
-  if (isGameOver) return;
+  if (GameState.isGameOver) return;
 
-  if (isAIThinking) {
+  if (GameState.isAIThinking) {
     status.textContent = 'AI 正在思考...';
     status.className = 'status thinking';
     return;
   }
 
-  const currentPlayer = board.currentPlayer;
+  const currentPlayer = GameState.board.currentPlayer;
   const playerName = currentPlayer === 1 ? '黑方' : '白方';
 
-  if (gameMode === 'ai') {
+  if (GameState.mode === 'ai') {
     const playerText = currentPlayer === 1 ? '你' : 'AI';
     status.textContent = `${playerText}的回合（${playerName}）`;
   } else {
@@ -250,7 +255,7 @@ function updateStatus() {
 function updateRestartButton() {
   const restartBtn = document.getElementById('restart');
   if (restartBtn) {
-    restartBtn.textContent = isGameOver ? '再来一局' : '重新开始';
+    restartBtn.textContent = GameState.isGameOver ? '再来一局' : '重新开始';
   }
 }
 
@@ -258,9 +263,9 @@ function updateRestartButton() {
  * 重新开始游戏
  */
 function restartGame() {
-  board.reset();
-  isGameOver = false;
-  isAIThinking = false;
+  GameState.board.reset();
+  GameState.isGameOver = false;
+  GameState.isAIThinking = false;
 
   // 清空棋盘显示
   const cells = document.querySelectorAll('.cell');
