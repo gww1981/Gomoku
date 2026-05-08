@@ -46,6 +46,7 @@
       <div class="modal-tabs">
         <button type="button" class="tab-btn active" data-tab="background">背景</button>
         <button type="button" class="tab-btn" data-tab="music">音乐</button>
+        <button type="button" class="tab-btn" data-tab="replay">录像</button>
       </div>
 
       <div class="modal-body">
@@ -95,6 +96,15 @@
               <input type="range" id="volume-slider" min="0" max="100" value="50">
             </div>
           </div>
+        </div>
+
+        <!-- 录像 Tab 面板 -->
+        <div class="tab-panel hidden" data-panel="replay">
+          <h3>历史录像</h3>
+          <div id="replay-list" class="replay-list">
+            <p class="replay-empty">暂无录像</p>
+          </div>
+          <button type="button" id="clear-replays" class="btn-danger">清空录像</button>
         </div>
       </div>
     </div>
