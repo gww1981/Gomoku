@@ -25,7 +25,7 @@
         </select>
         <!-- 重新开始按钮 -->
         <button type="button" id="restart">重新开始</button>
-        <button type="button" id="settings" title="背景设置">⚙️</button>
+        <button type="button" id="settings" aria-label="背景设置">⚙️</button>
       </div>
     </header>
 
@@ -35,29 +35,29 @@
     <!-- 棋盘区域 -->
     <div id="board" class="board"></div>
   <!-- 背景设置弹窗 -->
-<div id="settings-modal" class="modal hidden">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>背景设置</h2>
-      <button type="button" id="close-modal" class="close-btn">×</button>
-    </div>
-    <div class="modal-body">
-      <h3>预设背景</h3>
-      <div class="bg-grid">
-        <div class="bg-option" data-bg="preset-1" style="background-image: url('https://images.unsplash.com/photo-1549490349-8643362247b5?w=800')"></div>
-        <div class="bg-option" data-bg="preset-2" style="background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800')"></div>
-        <div class="bg-option" data-bg="preset-3" style="background-image: url('https://images.unsplash.com/photo-1563865436874-9aef32095fad?w=800')"></div>
-        <div class="bg-option" data-bg="preset-4" style="background-image: url('https://images.unsplash.com/photo-1518562180175-34a163b1a9a6?w=800')"></div>
+  <div id="settings-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="settings-title">背景设置</h2>
+        <button type="button" id="close-modal" class="close-btn">×</button>
       </div>
-      <h3>自定义背景</h3>
-      <div class="upload-area">
-        <input type="file" id="bg-upload" accept="image/jpeg,image/png,image/webp" hidden>
-        <button type="button" id="upload-btn" class="upload-btn">📁 选择图片</button>
-        <p class="upload-hint">支持 JPG、PNG、WebP，最大 2MB</p>
+      <div class="modal-body">
+        <h3>预设背景</h3>
+        <div class="bg-grid">
+          <div class="bg-option" data-bg="preset-1" aria-label="预设背景1" style="background-image: url('https://images.unsplash.com/photo-1549490349-8643362247b5?w=800')"></div>
+          <div class="bg-option" data-bg="preset-2" aria-label="预设背景2" style="background-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800')"></div>
+          <div class="bg-option" data-bg="preset-3" aria-label="预设背景3" style="background-image: url('https://images.unsplash.com/photo-1563865436874-9aef32095fad?w=800')"></div>
+          <div class="bg-option" data-bg="preset-4" aria-label="预设背景4" style="background-image: url('https://images.unsplash.com/photo-1518562180175-34a163b1a9a6?w=800')"></div>
+        </div>
+        <h3>自定义背景</h3>
+        <div class="upload-area">
+          <input type="file" id="bg-upload" accept="image/jpeg,image/png,image/webp" hidden>
+          <button type="button" id="upload-btn" class="upload-btn">📁 选择图片</button>
+          <p class="upload-hint">支持 JPG、PNG、WebP，最大 2MB</p>
+        </div>
       </div>
     </div>
   </div>
-</div>
   </div>
 
   <!-- 引入游戏依赖 -->
