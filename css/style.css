@@ -294,6 +294,10 @@
     }
 }
 
+.difficulty-select.hidden {
+    display: none;
+}
+
 /* ==================== 响应式设计 ==================== */
 @media (max-width: 500px) {
     .game-container {

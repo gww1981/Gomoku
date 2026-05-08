@@ -18,7 +18,7 @@
           <button type="button" class="mode-btn" data-mode="ai">人机</button>
         </div>
         <!-- 难度选择（仅人机模式显示） -->
-        <select id="difficulty" class="difficulty-select" style="display: none;">
+        <select id="difficulty" class="difficulty-select hidden">
           <option value="easy">简单</option>
           <option value="medium" selected>中等</option>
           <option value="hard">困难</option>
@@ -36,8 +36,8 @@
   </div>
 
   <!-- 引入游戏依赖 -->
-  <script src="js/game.js"></script>
-  <script src="js/ai.js"></script>
-  <script src="js/ui.js"></script>
+  <script src="js/game.js" defer></script>
+  <script src="js/ai.js" defer></script>
+  <script src="js/ui.js" defer></script>
 </body>
 </html>
