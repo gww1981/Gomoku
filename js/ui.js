@@ -384,11 +384,7 @@ function initSettingsModal() {
   function updateSelectedBg() {
     const currentBg = localStorage.getItem(STORAGE_KEY);
     bgOptions.forEach(option => {
-      if (option.dataset.bg === currentBg) {
-        option.classList.add('selected');
-      } else {
-        option.classList.remove('selected');
-      }
+      option.classList.toggle('selected', option.dataset.bg === currentBg);
     });
   }
 
@@ -431,12 +427,12 @@ function initMusicTab() {
     musicList.innerHTML = presets.map(preset => {
       const isSelected = preset.id === current;
       const isPlaying = isSelected && playing;
-      return `<div class="music-item ${isSelected ? 'selected' : ''} ${isPlaying ? 'playing' : ''}" data-track="${preset.id}">
+      return `<button class="music-item ${isSelected ? 'selected' : ''} ${isPlaying ? 'playing' : ''}" data-track="${preset.id}" role="option" aria-selected="${isSelected}">
         <span class="music-item-name">${isPlaying ? '🎵 ' : ''}${preset.name}</span>
-      </div>`;
-    }).join('') + `<div class="music-item ${current === 'custom' ? 'selected' : ''}" data-track="custom">
+      </button>`;
+    }).join('') + `<button class="music-item ${current === 'custom' ? 'selected' : ''}" data-track="custom" role="option" aria-selected="${current === 'custom'}">
       <span class="music-item-name">自定义音乐</span>
-    </div>`;
+    </button>`;
 
     musicList.querySelectorAll('.music-item').forEach(item => {
       item.addEventListener('click', () => {
@@ -559,15 +555,27 @@ function initSettingsModalTabs() {
   const tabBtns = document.querySelectorAll('.tab-btn');
   const panels = document.querySelectorAll('.tab-panel');
 
-  tabBtns.forEach(btn => {
+  tabBtns.forEach((btn, index) => {
+    btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-controls', `panel-${btn.dataset.tab}`);
+    btn.setAttribute('aria-selected', btn.classList.contains('active'));
     btn.addEventListener('click', () => {
       const tabName = btn.dataset.tab;
-      tabBtns.forEach(b => b.classList.remove('active'));
+      tabBtns.forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
       btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
       panels.forEach(panel => {
         panel.classList.toggle('hidden', panel.dataset.panel !== tabName);
       });
     });
+  });
+
+  panels.forEach(panel => {
+    panel.id = `panel-${panel.dataset.panel}`;
+    panel.setAttribute('role', 'tabpanel');
   });
 }
 

@@ -34,6 +34,10 @@
     --btn-bg: #654321;
     --btn-hover: #8B4513;
     --text-light: #F5DEB3;
+
+    /* 功能变量 */
+    --replay-speed: 800;
+    --search-depth: 4;
 }
 
 /* ==================== 游戏容器 ==================== */
@@ -333,14 +337,14 @@
 
 @media (min-width: 600px) {
     .cell {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
     }
 
     .stone-black,
     .stone-white {
-        width: 30px;
-        height: 30px;
+        width: 34px;
+        height: 34px;
     }
 }
 
@@ -366,8 +370,9 @@
     background: linear-gradient(180deg, #8B4513 0%, #654321 100%);
     border-radius: 12px;
     padding: 0;
-    min-width: 320px;
-    max-width: 400px;
+    min-width: min(320px, 90vw);
+    max-width: min(400px, 90vw);
+    width: 90vw;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
@@ -620,7 +625,7 @@ body {
 }
 /* 录像列表 */
 .replay-list {
-  max-height: 200px;
+  max-height: 40vh;
   overflow-y: auto;
   margin-bottom: 12px;
 }

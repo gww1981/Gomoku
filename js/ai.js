@@ -40,7 +40,7 @@ function getEasyMove(board) {
   if (emptyPositions.length === 0) return null;
   const randomIndex = Math.floor(Math.random() * emptyPositions.length);
   const move = emptyPositions[randomIndex];
-  console.log(`[AI Easy] 随机选择: (${move.row}, ${move.col})`);
+  // console.debug(`[AI Easy] 随机选择: (${move.row}, ${move.col})`);
   return move;
 }
 
@@ -135,7 +135,7 @@ function getMediumMove(board) {
     }
   }
 
-  console.log(`[AI Medium] 最佳位置: (${bestMove.row}, ${bestMove.col}), 评分: ${bestScore}`);
+  // console.debug(`[AI Medium] 最佳位置: (${bestMove.row}, ${bestMove.col}), 评分: ${bestScore}`);
   return bestMove;
 }
 
@@ -305,8 +305,10 @@ function minimax(board, depth, alpha, beta, isMaximizing, player) {
 }
 
 /**
- * 困难难度：Minimax + Alpha-Beta 剪枝，深度 4
+ * 困难难度：Minimax + Alpha-Beta 剪枝
  */
+const MAX_SEARCH_DEPTH = 4;
+
 function getHardMove(board) {
   const candidates = getCandidateMoves(board);
   if (candidates.length === 0) return null;
@@ -315,18 +317,16 @@ function getHardMove(board) {
   let bestScore = -Infinity;
   let bestMove = candidates[0];
 
-  const depth = 4;
-
   for (const move of candidates) {
     const newBoard = simulateMove(board, move.row, move.col, AI_PLAYER);
 
     // 快速检查：如果能赢，直接选择
     if (checkWinner(newBoard, move.row, move.col, AI_PLAYER)) {
-      console.log(`[AI Hard] 发现必胜点: (${move.row}, ${move.col})`);
+      // console.debug(`[AI Hard] 发现必胜点: (${move.row}, ${move.col})`);
       return move;
     }
 
-    const result = minimax(newBoard, depth - 1, -Infinity, Infinity, false, PLAYER);
+    const result = minimax(newBoard, MAX_SEARCH_DEPTH - 1, -Infinity, Infinity, false, PLAYER);
 
     if (result.score > bestScore) {
       bestScore = result.score;
@@ -334,7 +334,7 @@ function getHardMove(board) {
     }
   }
 
-  console.log(`[AI Hard] 最佳位置: (${bestMove.row}, ${bestMove.col}), 评分: ${bestScore}`);
+  // console.debug(`[AI Hard] 最佳位置: (${bestMove.row}, ${bestMove.col}), 评分: ${bestScore}`);
   return bestMove;
 }
 
