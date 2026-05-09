@@ -618,9 +618,6 @@ body {
   width: 120px;
   accent-color: var(--win-glow);
 }
-<<<<<<< HEAD
-=======
-
 /* 录像列表 */
 .replay-list {
   max-height: 200px;
@@ -703,4 +700,3 @@ body {
 .btn-danger:hover {
   background: #c0392b;
 }
->>>>>>> 7978abf465fd598588e590e1052b40f0f9f322c1

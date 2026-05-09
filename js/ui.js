@@ -23,12 +23,9 @@ function initGame() {
   // 初始化音频管理器
   initAudioManager();
 
-<<<<<<< HEAD
-=======
   // 初始化录像管理器
   initReplayManager();
 
->>>>>>> 7978abf465fd598588e590e1052b40f0f9f322c1
   GameState.board = new Board(BOARD_SIZE);
   GameState.isGameOver = false;
   GameState.isAIThinking = false;
@@ -398,10 +395,7 @@ function initSettingsModal() {
   // 初始化 Tab 切换和音乐
   initSettingsModalTabs();
   initMusicTab();
-<<<<<<< HEAD
-=======
   initReplayTab();
->>>>>>> 7978abf465fd598588e590e1052b40f0f9f322c1
 }
 
 // ========== 音乐 Tab ==========
@@ -494,8 +488,6 @@ function initMusicTab() {
   updateUI();
 }
 
-<<<<<<< HEAD
-=======
 // ========== 录像 Tab ==========
 
 function initReplayTab() {
@@ -561,7 +553,6 @@ function initReplayTab() {
   renderReplayList();
 }
 
->>>>>>> 7978abf465fd598588e590e1052b40f0f9f322c1
 // ========== 设置弹窗 Tab 切换 ==========
 
 function initSettingsModalTabs() {
@@ -578,8 +569,6 @@ function initSettingsModalTabs() {
       });
     });
   });
-<<<<<<< HEAD
-=======
 }
 
 /**
@@ -619,5 +608,4 @@ function startReplay(replayId) {
       }
     }
   );
->>>>>>> 7978abf465fd598588e590e1052b40f0f9f322c1
 }
