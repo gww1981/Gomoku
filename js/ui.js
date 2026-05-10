@@ -221,6 +221,7 @@ function triggerAIMove() {
 
     GameState.isAIThinking = false;
     GameState._aiTimer = null;
+    updateUndoButton();
 
     // AI 完成后恢复玩家计时
     if (!GameState.isGameOver && GameState.board.currentPlayer === 1) {
@@ -383,6 +384,7 @@ function undoLastMove() {
 
   // 更新状态
   updateStatus();
+  updateRestartButton();
   updateUndoButton();
 
   // 重新启动计时器
