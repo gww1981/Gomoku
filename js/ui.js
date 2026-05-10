@@ -221,6 +221,7 @@ function triggerAIMove() {
 
     GameState.isAIThinking = false;
     GameState._aiTimer = null;
+    updateStatus();
     updateUndoButton();
 
     // AI 完成后恢复玩家计时
