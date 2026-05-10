@@ -16,6 +16,17 @@ const GameState = {
   isReplaying: false    // 回放状态标志
 };
 
+// 计时器常量
+const TIMER_LIMIT = 30;
+
+// 计时器状态
+const TimerState = {
+  black: TIMER_LIMIT,
+  white: TIMER_LIMIT,
+  interval: null,
+  active: null // 'black' | 'white' | null
+};
+
 /**
  * 初始化游戏
  */
@@ -39,6 +50,10 @@ function initGame() {
   // 更新状态显示
   updateStatus();
   updateRestartButton();
+
+  // 启动计时器
+  resetTimers();
+  startTimer();
 }
 
 /**
@@ -111,10 +126,7 @@ function bindEvents() {
  * @param {Event} e - 点击事件
  */
 function handleBoardClick(e) {
-  // 游戏结束或 AI 正在思考时忽略点击
   if (GameState.isGameOver || GameState.isAIThinking) return;
-
-  // 回放状态时忽略点击
   if (GameState.isReplaying) return;
 
   const cell = e.target.closest('.cell');
@@ -123,8 +135,12 @@ function handleBoardClick(e) {
   const row = parseInt(cell.dataset.row, 10);
   const col = parseInt(cell.dataset.col, 10);
 
-  // 尝试落子
   placeStone(row, col);
+
+  // PvP 模式落子后切换计时器
+  if (GameState.mode === 'pvp' && !GameState.isGameOver) {
+    switchTimer();
+  }
 }
 
 /**
@@ -166,6 +182,11 @@ function placeStone(row, col) {
   // 切换回合
   updateStatus();
 
+  // AI 回合暂停玩家计时
+  if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
+    stopTimer();
+  }
+
   // 如果是人机模式且是 AI 回合
   if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
     triggerAIMove();
@@ -177,14 +198,12 @@ function placeStone(row, col) {
  */
 function triggerAIMove() {
   GameState.isAIThinking = true;
-  updateStatus(); // 显示 AI 正在思考
+  updateStatus();
 
-  // 清除之前的 AI 计时器，防止竞态
   if (GameState._aiTimer) {
     clearTimeout(GameState._aiTimer);
   }
 
-  // 使用 setTimeout 模拟思考过程，避免阻塞 UI
   GameState._aiTimer = setTimeout(() => {
     const aiMove = getAIMove(GameState.board.grid, GameState.difficulty);
 
@@ -194,6 +213,11 @@ function triggerAIMove() {
 
     GameState.isAIThinking = false;
     GameState._aiTimer = null;
+
+    // AI 完成后恢复玩家计时
+    if (!GameState.isGameOver && GameState.board.currentPlayer === 1) {
+      startTimer();
+    }
   }, 500);
 }
 
@@ -311,6 +335,88 @@ function updateRestartButton() {
   }
 }
 
+function startTimer() {
+  if (GameState.isGameOver || GameState.isReplaying) return;
+  if (GameState.mode === 'ai' && GameState.board.currentPlayer !== 1) return;
+
+  const player = GameState.board.currentPlayer === 1 ? 'black' : 'white';
+  TimerState.active = player;
+  updateTimerDisplay();
+
+  if (TimerState.interval) clearInterval(TimerState.interval);
+  TimerState.interval = setInterval(() => {
+    TimerState[player]--;
+    updateTimerDisplay();
+
+    if (TimerState[player] <= 0) {
+      clearInterval(TimerState.interval);
+      TimerState.interval = null;
+      handleTimeout(player);
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (TimerState.interval) {
+    clearInterval(TimerState.interval);
+    TimerState.interval = null;
+  }
+  TimerState.active = null;
+  updateTimerDisplay();
+}
+
+function switchTimer() {
+  stopTimer();
+  startTimer();
+}
+
+function resetTimers() {
+  stopTimer();
+  TimerState.black = TIMER_LIMIT;
+  TimerState.white = TIMER_LIMIT;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const blackEl = document.getElementById('timer-black');
+  const whiteEl = document.getElementById('timer-white');
+  if (!blackEl || !whiteEl) return;
+
+  blackEl.textContent = `黑方 ${TimerState.black}s`;
+  whiteEl.textContent = `白方 ${TimerState.white}s`;
+
+  blackEl.classList.toggle('timer-active', TimerState.active === 'black');
+  whiteEl.classList.toggle('timer-active', TimerState.active === 'white');
+
+  [blackEl, whiteEl].forEach((el, i) => {
+    const time = i === 0 ? TimerState.black : TimerState.white;
+    el.classList.remove('timer-warning', 'timer-critical');
+    if (time <= 3) {
+      el.classList.add('timer-critical');
+    } else if (time <= 5) {
+      el.classList.add('timer-warning');
+    }
+  });
+}
+
+function handleTimeout(player) {
+  GameState.isGameOver = true;
+  const winner = player === 'black' ? 2 : 1;
+  const winnerName = winner === 1 ? '黑方' : '白方';
+  const loserName = player === 'black' ? '黑方' : '白方';
+
+  const status = document.getElementById('status');
+  if (status) {
+    const modeText = GameState.mode === 'ai'
+      ? (winner === 2 ? 'AI' : '你')
+      : winnerName;
+    status.textContent = `${loserName}超时，${modeText}获胜！`;
+    status.className = 'status win';
+  }
+
+  updateRestartButton();
+}
+
 /**
  * 重新开始游戏
  */
@@ -331,6 +437,10 @@ function restartGame() {
   GameState.isGameOver = false;
   GameState.isAIThinking = false;
   GameState.moveHistory = [];
+
+  // 重置计时器
+  resetTimers();
+  startTimer();
 
   // 清空棋盘显示
   const cells = document.querySelectorAll('.cell');
@@ -617,6 +727,7 @@ function startReplay(replayId) {
   cells.forEach(cell => { cell.className = 'cell'; });
 
   GameState.isReplaying = true;
+  stopTimer();
 
   const status = document.getElementById('status');
   if (status) {
