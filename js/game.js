@@ -115,6 +115,25 @@ class Board {
   }
 
   /**
+   * 撤销落子
+   * @param {number} row
+   * @param {number} col
+   * @returns {boolean} 是否成功
+   */
+  undoMove(row, col) {
+    if (row < 0 || row >= this.size || col < 0 || col >= this.size) {
+      return false;
+    }
+    if (this.grid[row][col] === 0) {
+      return false;
+    }
+    this.grid[row][col] = 0;
+    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+    this.moveCount--;
+    return true;
+  }
+
+  /**
    * 检测平局（棋盘满且无胜者）
    * @returns {boolean} 是否平局
    */

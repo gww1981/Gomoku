@@ -16,6 +16,17 @@ const GameState = {
   isReplaying: false    // 回放状态标志
 };
 
+// 计时器常量
+const TIMER_LIMIT = 30;
+
+// 计时器状态
+const TimerState = {
+  black: TIMER_LIMIT,
+  white: TIMER_LIMIT,
+  interval: null,
+  active: null // 'black' | 'white' | null
+};
+
 /**
  * 初始化游戏
  */
@@ -39,6 +50,10 @@ function initGame() {
   // 更新状态显示
   updateStatus();
   updateRestartButton();
+
+  // 启动计时器
+  resetTimers();
+  startTimer();
 }
 
 /**
@@ -96,6 +111,12 @@ function bindEvents() {
     restartBtn.addEventListener('click', restartGame);
   }
 
+  // 悔棋按钮
+  const undoBtn = document.getElementById('undo-btn');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', undoLastMove);
+  }
+
   // 棋盘点击事件（事件委托）
   const boardElement = document.getElementById('board');
   if (boardElement) {
@@ -111,10 +132,7 @@ function bindEvents() {
  * @param {Event} e - 点击事件
  */
 function handleBoardClick(e) {
-  // 游戏结束或 AI 正在思考时忽略点击
   if (GameState.isGameOver || GameState.isAIThinking) return;
-
-  // 回放状态时忽略点击
   if (GameState.isReplaying) return;
 
   const cell = e.target.closest('.cell');
@@ -123,8 +141,14 @@ function handleBoardClick(e) {
   const row = parseInt(cell.dataset.row, 10);
   const col = parseInt(cell.dataset.col, 10);
 
-  // 尝试落子
   placeStone(row, col);
+
+  // PvP 模式落子后切换计时器
+  if (GameState.mode === 'pvp' && !GameState.isGameOver) {
+    switchTimer();
+  }
+
+  updateUndoButton();
 }
 
 /**
@@ -166,6 +190,11 @@ function placeStone(row, col) {
   // 切换回合
   updateStatus();
 
+  // AI 回合暂停玩家计时
+  if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
+    stopTimer();
+  }
+
   // 如果是人机模式且是 AI 回合
   if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
     triggerAIMove();
@@ -177,14 +206,12 @@ function placeStone(row, col) {
  */
 function triggerAIMove() {
   GameState.isAIThinking = true;
-  updateStatus(); // 显示 AI 正在思考
+  updateStatus();
 
-  // 清除之前的 AI 计时器，防止竞态
   if (GameState._aiTimer) {
     clearTimeout(GameState._aiTimer);
   }
 
-  // 使用 setTimeout 模拟思考过程，避免阻塞 UI
   GameState._aiTimer = setTimeout(() => {
     const aiMove = getAIMove(GameState.board.grid, GameState.difficulty);
 
@@ -194,6 +221,13 @@ function triggerAIMove() {
 
     GameState.isAIThinking = false;
     GameState._aiTimer = null;
+    updateStatus();
+    updateUndoButton();
+
+    // AI 完成后恢复玩家计时
+    if (!GameState.isGameOver && GameState.board.currentPlayer === 1) {
+      startTimer();
+    }
   }, 500);
 }
 
@@ -219,6 +253,7 @@ function updateCellDisplay(row, col, player) {
  */
 function handleWin(player, winLine) {
   GameState.isGameOver = true;
+  stopTimer();
 
   // 高亮获胜连线
   winLine.forEach(pos => {
@@ -247,6 +282,7 @@ function handleWin(player, winLine) {
   }
 
   updateRestartButton();
+  updateUndoButton();
 }
 
 /**
@@ -254,6 +290,7 @@ function handleWin(player, winLine) {
  */
 function handleDraw() {
   GameState.isGameOver = true;
+  stopTimer();
 
   const status = document.getElementById('status');
   if (status) {
@@ -271,6 +308,7 @@ function handleDraw() {
   }
 
   updateRestartButton();
+  updateUndoButton();
 }
 
 /**
@@ -312,6 +350,159 @@ function updateRestartButton() {
 }
 
 /**
+ * 悔棋逻辑
+ */
+function undoLastMove() {
+  if (GameState.isAIThinking || GameState.isReplaying) return;
+  if (GameState.moveHistory.length === 0) return;
+
+  // 先停止计时器（游戏结束后可能没有活跃计时器，但 stopTimer 安全可重入）
+  stopTimer();
+
+  // 清除获胜高亮（如果游戏已结束）
+  if (GameState.isGameOver) {
+    document.querySelectorAll('.stone-winning').forEach(el => {
+      el.classList.remove('stone-winning');
+    });
+    GameState.isGameOver = false;
+  }
+
+  // AI 模式撤回两步，PvP 模式撤回一步
+  const stepsToUndo = GameState.mode === 'ai' ? 2 : 1;
+
+  for (let i = 0; i < stepsToUndo; i++) {
+    if (GameState.moveHistory.length === 0) break;
+
+    const move = GameState.moveHistory.pop();
+    GameState.board.undoMove(move.row, move.col);
+
+    // 清除 DOM 棋子样式
+    const cell = document.querySelector(`.cell[data-row="${move.row}"][data-col="${move.col}"]`);
+    if (cell) {
+      cell.classList.remove('occupied', 'stone-black', 'stone-white');
+    }
+  }
+
+  // 更新状态
+  updateStatus();
+  updateRestartButton();
+  updateUndoButton();
+
+  // 重新启动计时器
+  startTimer();
+}
+
+/**
+ * 更新悔棋按钮禁用状态
+ */
+function updateUndoButton() {
+  const btn = document.getElementById('undo-btn');
+  if (!btn) return;
+
+  // AI 思考中或回放中禁用（游戏结束后不禁用，允许撤回致胜/致负步）
+  if (GameState.isAIThinking || GameState.isReplaying) {
+    btn.disabled = true;
+    return;
+  }
+
+  if (GameState.moveHistory.length === 0) {
+    btn.disabled = true;
+    return;
+  }
+
+  // AI 模式：需要至少 2 步才能撤回（玩家+AI）
+  if (GameState.mode === 'ai' && GameState.moveHistory.length < 2) {
+    btn.disabled = true;
+    return;
+  }
+
+  btn.disabled = false;
+}
+
+function startTimer() {
+  if (GameState.isGameOver || GameState.isReplaying) return;
+  if (GameState.mode === 'ai' && GameState.board.currentPlayer !== 1) return;
+
+  const player = GameState.board.currentPlayer === 1 ? 'black' : 'white';
+  TimerState.active = player;
+  updateTimerDisplay();
+
+  if (TimerState.interval) clearInterval(TimerState.interval);
+  TimerState.interval = setInterval(() => {
+    TimerState[player]--;
+    updateTimerDisplay();
+
+    if (TimerState[player] <= 0) {
+      clearInterval(TimerState.interval);
+      TimerState.interval = null;
+      handleTimeout(player);
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (TimerState.interval) {
+    clearInterval(TimerState.interval);
+    TimerState.interval = null;
+  }
+  TimerState.active = null;
+  updateTimerDisplay();
+}
+
+function switchTimer() {
+  stopTimer();
+  startTimer();
+}
+
+function resetTimers() {
+  stopTimer();
+  TimerState.black = TIMER_LIMIT;
+  TimerState.white = TIMER_LIMIT;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const blackEl = document.getElementById('timer-black');
+  const whiteEl = document.getElementById('timer-white');
+  if (!blackEl || !whiteEl) return;
+
+  blackEl.textContent = `黑方 ${TimerState.black}s`;
+  whiteEl.textContent = `白方 ${TimerState.white}s`;
+
+  blackEl.classList.toggle('timer-active', TimerState.active === 'black');
+  whiteEl.classList.toggle('timer-active', TimerState.active === 'white');
+
+  [blackEl, whiteEl].forEach((el, i) => {
+    const time = i === 0 ? TimerState.black : TimerState.white;
+    el.classList.remove('timer-warning', 'timer-critical');
+    if (time <= 3) {
+      el.classList.add('timer-critical');
+    } else if (time <= 5) {
+      el.classList.add('timer-warning');
+    }
+  });
+}
+
+function handleTimeout(player) {
+  GameState.isGameOver = true;
+  const winner = player === 'black' ? 2 : 1;
+  const winnerName = winner === 1 ? '黑方' : '白方';
+  const loserName = player === 'black' ? '黑方' : '白方';
+
+  const status = document.getElementById('status');
+  if (status) {
+    const modeText = GameState.mode === 'ai'
+      ? (winner === 2 ? 'AI' : '你')
+      : winnerName;
+    status.textContent = `${loserName}超时，${modeText}获胜！`;
+    status.className = 'status win';
+  }
+
+  updateRestartButton();
+  updateUndoButton();
+}
+
+/**
  * 重新开始游戏
  */
 function restartGame() {
@@ -332,6 +523,10 @@ function restartGame() {
   GameState.isAIThinking = false;
   GameState.moveHistory = [];
 
+  // 重置计时器
+  resetTimers();
+  startTimer();
+
   // 清空棋盘显示
   const cells = document.querySelectorAll('.cell');
   cells.forEach(cell => {
@@ -341,6 +536,7 @@ function restartGame() {
   // 更新状态
   updateStatus();
   updateRestartButton();
+  updateUndoButton();
 }
 
 // 页面加载完成后初始化游戏
@@ -617,6 +813,7 @@ function startReplay(replayId) {
   cells.forEach(cell => { cell.className = 'cell'; });
 
   GameState.isReplaying = true;
+  stopTimer();
 
   const status = document.getElementById('status');
   if (status) {

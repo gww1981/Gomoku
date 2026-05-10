@@ -25,12 +25,20 @@
         </select>
         <!-- 重新开始按钮 -->
         <button type="button" id="restart">重新开始</button>
+        <button type="button" id="undo-btn" disabled>悔棋</button>
         <button type="button" id="settings" aria-label="背景设置">⚙️</button>
       </div>
     </header>
 
     <!-- 状态提示 -->
     <div id="status">黑方的回合</div>
+
+    <!-- 计时器 -->
+    <div id="timer-container">
+      <span id="timer-black" class="timer-active">黑方 30s</span>
+      <span class="timer-separator">|</span>
+      <span id="timer-white">白方 30s</span>
+    </div>
 
     <!-- 棋盘区域 -->
     <div id="board" class="board"></div>
