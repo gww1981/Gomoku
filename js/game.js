@@ -169,6 +169,9 @@ function loadBackgroundSetting() {
     }
 }
 
+// 允许的图片 MIME 类型
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 // 将文件转为 Base64 DataURL
 function fileToDataURL(file) {
     return new Promise((resolve, reject) => {
@@ -176,9 +179,13 @@ function fileToDataURL(file) {
             reject(new Error('图片大小不能超过 2MB'));
             return;
         }
+        if (file.type && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            reject(new Error(`不支持的图片格式: ${file.type || '未知'}`));
+            return;
+        }
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
+        reader.onerror = () => reject(new Error('文件读取失败'));
         reader.readAsDataURL(file);
     });
 }
@@ -300,9 +307,14 @@ class AudioManager {
   }
 
   async loadCustomMusic(file) {
+    const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3', 'audio/x-wav'];
     return new Promise((resolve, reject) => {
       if (file.size > this.MAX_FILE_SIZE) {
         reject(new Error('文件大小不能超过 10MB'));
+        return;
+      }
+      if (file.type && !ALLOWED_AUDIO_TYPES.includes(file.type)) {
+        reject(new Error(`不支持的音频格式: ${file.type}`));
         return;
       }
       const reader = new FileReader();

@@ -71,6 +71,13 @@ function bindEvents() {
       document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
       GameState.mode = e.target.dataset.mode;
+
+      // 切换难度选择器可见性
+      const difficultySelect = document.getElementById('difficulty');
+      if (difficultySelect) {
+        difficultySelect.classList.toggle('hidden', GameState.mode !== 'ai');
+      }
+
       restartGame();
     });
   });
@@ -172,8 +179,13 @@ function triggerAIMove() {
   GameState.isAIThinking = true;
   updateStatus(); // 显示 AI 正在思考
 
+  // 清除之前的 AI 计时器，防止竞态
+  if (GameState._aiTimer) {
+    clearTimeout(GameState._aiTimer);
+  }
+
   // 使用 setTimeout 模拟思考过程，避免阻塞 UI
-  setTimeout(() => {
+  GameState._aiTimer = setTimeout(() => {
     const aiMove = getAIMove(GameState.board.grid, GameState.difficulty);
 
     if (aiMove) {
@@ -181,6 +193,7 @@ function triggerAIMove() {
     }
 
     GameState.isAIThinking = false;
+    GameState._aiTimer = null;
   }, 500);
 }
 
@@ -302,6 +315,18 @@ function updateRestartButton() {
  * 重新开始游戏
  */
 function restartGame() {
+  // 停止回放（如果正在进行）
+  if (GameState.isReplaying && window.replayManager) {
+    window.replayManager.stopReplay();
+    GameState.isReplaying = false;
+  }
+
+  // 清除 AI 计时器，防止竞态
+  if (GameState._aiTimer) {
+    clearTimeout(GameState._aiTimer);
+    GameState._aiTimer = null;
+  }
+
   GameState.board.reset();
   GameState.isGameOver = false;
   GameState.isAIThinking = false;
