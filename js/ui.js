@@ -111,6 +111,12 @@ function bindEvents() {
     restartBtn.addEventListener('click', restartGame);
   }
 
+  // 悔棋按钮
+  const undoBtn = document.getElementById('undo-btn');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', undoLastMove);
+  }
+
   // 棋盘点击事件（事件委托）
   const boardElement = document.getElementById('board');
   if (boardElement) {
@@ -141,6 +147,8 @@ function handleBoardClick(e) {
   if (GameState.mode === 'pvp' && !GameState.isGameOver) {
     switchTimer();
   }
+
+  updateUndoButton();
 }
 
 /**
@@ -272,6 +280,7 @@ function handleWin(player, winLine) {
   }
 
   updateRestartButton();
+  updateUndoButton();
 }
 
 /**
@@ -297,6 +306,7 @@ function handleDraw() {
   }
 
   updateRestartButton();
+  updateUndoButton();
 }
 
 /**
@@ -335,6 +345,75 @@ function updateRestartButton() {
   if (restartBtn) {
     restartBtn.textContent = GameState.isGameOver ? '再来一局' : '重新开始';
   }
+}
+
+/**
+ * 悔棋逻辑
+ */
+function undoLastMove() {
+  if (GameState.isAIThinking || GameState.isReplaying) return;
+  if (GameState.moveHistory.length === 0) return;
+
+  // 先停止计时器（游戏结束后可能没有活跃计时器，但 stopTimer 安全可重入）
+  stopTimer();
+
+  // 清除获胜高亮（如果游戏已结束）
+  if (GameState.isGameOver) {
+    document.querySelectorAll('.stone-winning').forEach(el => {
+      el.classList.remove('stone-winning');
+    });
+    GameState.isGameOver = false;
+  }
+
+  // AI 模式撤回两步，PvP 模式撤回一步
+  const stepsToUndo = GameState.mode === 'ai' ? 2 : 1;
+
+  for (let i = 0; i < stepsToUndo; i++) {
+    if (GameState.moveHistory.length === 0) break;
+
+    const move = GameState.moveHistory.pop();
+    GameState.board.undoMove(move.row, move.col);
+
+    // 清除 DOM 棋子样式
+    const cell = document.querySelector(`.cell[data-row="${move.row}"][data-col="${move.col}"]`);
+    if (cell) {
+      cell.classList.remove('occupied', 'stone-black', 'stone-white');
+    }
+  }
+
+  // 更新状态
+  updateStatus();
+  updateUndoButton();
+
+  // 重新启动计时器
+  startTimer();
+}
+
+/**
+ * 更新悔棋按钮禁用状态
+ */
+function updateUndoButton() {
+  const btn = document.getElementById('undo-btn');
+  if (!btn) return;
+
+  // AI 思考中或回放中禁用（游戏结束后不禁用，允许撤回致胜/致负步）
+  if (GameState.isAIThinking || GameState.isReplaying) {
+    btn.disabled = true;
+    return;
+  }
+
+  if (GameState.moveHistory.length === 0) {
+    btn.disabled = true;
+    return;
+  }
+
+  // AI 模式：需要至少 2 步才能撤回（玩家+AI）
+  if (GameState.mode === 'ai' && GameState.moveHistory.length < 2) {
+    btn.disabled = true;
+    return;
+  }
+
+  btn.disabled = false;
 }
 
 function startTimer() {
@@ -417,6 +496,7 @@ function handleTimeout(player) {
   }
 
   updateRestartButton();
+  updateUndoButton();
 }
 
 /**
@@ -453,6 +533,7 @@ function restartGame() {
   // 更新状态
   updateStatus();
   updateRestartButton();
+  updateUndoButton();
 }
 
 // 页面加载完成后初始化游戏
