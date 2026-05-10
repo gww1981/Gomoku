@@ -243,6 +243,7 @@ function updateCellDisplay(row, col, player) {
  */
 function handleWin(player, winLine) {
   GameState.isGameOver = true;
+  stopTimer();
 
   // 高亮获胜连线
   winLine.forEach(pos => {
@@ -278,6 +279,7 @@ function handleWin(player, winLine) {
  */
 function handleDraw() {
   GameState.isGameOver = true;
+  stopTimer();
 
   const status = document.getElementById('status');
   if (status) {
