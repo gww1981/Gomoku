@@ -747,3 +747,42 @@ body {
 .btn-danger:hover {
   background: #c0392b;
 }
+
+/* ========== 计时器样式 ========== */
+#timer-container {
+  text-align: center;
+  font-size: 1.1rem;
+  padding: 8px 0;
+  font-family: 'Georgia', serif;
+  letter-spacing: 1px;
+  user-select: none;
+}
+
+#timer-container .timer-separator {
+  margin: 0 16px;
+  color: #8b7355;
+  opacity: 0.6;
+}
+
+#timer-container span {
+  transition: color 0.3s ease;
+}
+
+.timer-active {
+  font-weight: bold;
+  color: #4a3728;
+}
+
+.timer-warning {
+  color: #d32f2f !important;
+}
+
+.timer-critical {
+  color: #d32f2f !important;
+  animation: timer-blink 0.5s ease-in-out infinite;
+}
+
+@keyframes timer-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
