@@ -27,6 +27,29 @@ const TimerState = {
   active: null // 'black' | 'white' | null
 };
 
+function clearLastMoveHighlight() {
+  document.querySelectorAll('.cell.last-move').forEach((el) => {
+    el.classList.remove('last-move');
+  });
+}
+
+function markLastMove(row, col) {
+  clearLastMoveHighlight();
+  const cell = document.querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+  if (cell) {
+    cell.classList.add('last-move');
+  }
+}
+
+function restoreLastMoveHighlightFromHistory() {
+  const lastMove = GameState.moveHistory[GameState.moveHistory.length - 1];
+  if (!lastMove) {
+    clearLastMoveHighlight();
+    return;
+  }
+  markLastMove(lastMove.row, lastMove.col);
+}
+
 /**
  * 初始化游戏
  */
@@ -234,6 +257,7 @@ function updateCellDisplay(row, col, player) {
   // 添加棋子样式
   cell.classList.add('occupied');
   cell.classList.add(player === 1 ? 'stone-black' : 'stone-white');
+  markLastMove(row, col);
 }
 
 /**
@@ -369,9 +393,11 @@ function undoLastMove() {
     // 清除 DOM 棋子样式
     const cell = document.querySelector(`.cell[data-row="${move.row}"][data-col="${move.col}"]`);
     if (cell) {
-      cell.classList.remove('occupied', 'stone-black', 'stone-white');
+      cell.classList.remove('occupied', 'stone-black', 'stone-white', 'last-move');
     }
   }
+
+  restoreLastMoveHighlightFromHistory();
 
   // 更新状态
   updateStatus();
