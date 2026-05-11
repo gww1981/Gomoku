@@ -3,6 +3,70 @@
  * 负责背景设置、Tab 切换
  */
 
+// 预设背景配置
+const PRESET_BACKGROUNDS = {
+    'preset-1': 'https://images.unsplash.com/photo-1549490349-8643362247b5?w=1920',
+    'preset-2': 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1920',
+    'preset-3': 'https://images.unsplash.com/photo-1563865436874-9aef32095fad?w=1920',
+    'preset-4': 'https://images.unsplash.com/photo-1518562180175-34a163b1a9a6?w=1920'
+};
+const STORAGE_KEY = 'gomoku_background';
+const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+// 应用背景图片
+function applyBackground(bgValue) {
+    if (PRESET_BACKGROUNDS[bgValue]) {
+        document.body.style.backgroundImage = `url('${PRESET_BACKGROUNDS[bgValue]}')`;
+    } else if (bgValue.startsWith('data:')) {
+        document.body.style.backgroundImage = `url('${bgValue}')`;
+    }
+}
+
+// 保存背景设置到 localStorage
+function saveBackgroundSetting(bgValue) {
+    try {
+        localStorage.setItem(STORAGE_KEY, bgValue);
+    } catch (e) {
+        console.warn('无法保存背景设置:', e);
+    }
+}
+
+// 从 localStorage 加载背景设置
+function loadBackgroundSetting() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            applyBackground(saved);
+            return saved;
+        }
+        return null;
+    } catch (e) {
+        console.warn('无法加载背景设置:', e);
+        return null;
+    }
+}
+
+// 允许的图片 MIME 类型
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+// 将文件转为 Base64 DataURL
+function fileToDataURL(file) {
+    return new Promise((resolve, reject) => {
+        if (file.size > MAX_FILE_SIZE) {
+            reject(new Error('图片大小不能超过 2MB'));
+            return;
+        }
+        if (file.type && !ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            reject(new Error(`不支持的图片格式: ${file.type || '未知'}`));
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('文件读取失败'));
+        reader.readAsDataURL(file);
+    });
+}
+
 // 背景设置弹窗逻辑
 function initSettingsModal() {
   const modal = document.getElementById('settings-modal');
