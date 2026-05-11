@@ -82,12 +82,13 @@ index.html          # 入口页面
 css/
   style.css         # 样式（含木纹主题）
 js/
-  game.js           # 核心游戏逻辑（棋盘、落子、胜负判定）
+  game.js           # 核心游戏模型（Board 类：棋盘数据、落子、胜负判定）
   ai.js             # AI 算法（简单/中等/困难三级难度）
-  ui-core.js        # 游戏核心交互（落子、胜负、悔棋、计时器）
+  replay.js         # ReplayManager（录像保存、读取、回放控制）
+  ui-core.js        # 游戏核心交互（落子事件、胜负提示、悔棋、计时器）
   ui-settings.js    # 设置弹窗框架、背景设置、Tab 切换
-  ui-music.js       # 音乐播放控制
-  ui-replay.js      # 录像列表与回放控制
+  ui-music.js       # AudioManager + 音乐播放控制
+  ui-replay.js      # 录像列表 UI、回放触发
 ```
 
 ## 开发命令
