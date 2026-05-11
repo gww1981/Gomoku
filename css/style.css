@@ -384,6 +384,13 @@
     }
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .cell.last-move .stone-black::after,
+    .cell.last-move .stone-white::after {
+        animation: none;
+    }
+}
+
 .difficulty-select.hidden {
     display: none;
 }

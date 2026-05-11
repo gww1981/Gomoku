@@ -8,9 +8,24 @@
 <body>
   <div id="qunit"></div>
   <div id="qunit-fixture"></div>
+  <div id="board"></div>
+  <div id="status"></div>
+  <button id="restart"></button>
+  <button id="undo-btn"></button>
+  <select id="difficulty"></select>
+  <span id="timer-black"></span>
+  <span id="timer-white"></span>
   <script src="lib/qunit.js"></script>
+  <script>
+    window.initAudioManager = function() {};
+    window.initReplayManager = function() {};
+    window.initSettingsModal = function() {};
+    window.getAIMove = function() { return null; };
+  </script>
   <script src="../js/game.js?_t=2"></script>
+  <script src="../js/ui-core.js"></script>
   <script src="board.test.js"></script>
+  <script src="ui-core-last-move.test.js"></script>
   <script src="audio-manager.test.js"></script>
 </body>
 </html>
