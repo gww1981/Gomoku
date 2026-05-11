@@ -84,7 +84,10 @@ css/
 js/
   game.js           # 核心游戏逻辑（棋盘、落子、胜负判定）
   ai.js             # AI 算法（简单/中等/困难三级难度）
-  ui.js             # UI 交互（模式切换、重新开始等）
+  ui-core.js        # 游戏核心交互（落子、胜负、悔棋、计时器）
+  ui-settings.js    # 设置弹窗框架、背景设置、Tab 切换
+  ui-music.js       # 音乐播放控制
+  ui-replay.js      # 录像列表与回放控制
 ```
 
 ## 开发命令
