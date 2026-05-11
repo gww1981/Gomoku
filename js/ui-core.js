@@ -141,14 +141,9 @@ function handleBoardClick(e) {
   const row = parseInt(cell.dataset.row, 10);
   const col = parseInt(cell.dataset.col, 10);
 
-  placeStone(row, col);
-
-  // PvP 模式落子后切换计时器
-  if (GameState.mode === 'pvp' && !GameState.isGameOver) {
-    switchTimer();
+  if (placeStone(row, col)) {
+    updateUndoButton();
   }
-
-  updateUndoButton();
 }
 
 /**
@@ -161,7 +156,7 @@ function placeStone(row, col) {
   const currentPlayer = GameState.board.currentPlayer;
 
   if (!GameState.board.placeStone(row, col, currentPlayer)) {
-    return; // 落子失败（位置已有棋子或超出边界）
+    return false;
   }
 
   // 记录落子
@@ -178,27 +173,26 @@ function placeStone(row, col) {
   const winLine = GameState.board.checkWin(row, col);
   if (winLine) {
     handleWin(currentPlayer, winLine);
-    return;
+    return true;
   }
 
   // 检查平局
   if (GameState.board.checkDraw()) {
     handleDraw();
-    return;
+    return true;
   }
 
   // 切换回合
   updateStatus();
 
-  // AI 回合暂停玩家计时
-  if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
-    stopTimer();
-  }
+  switchTimer();
 
   // 如果是人机模式且是 AI 回合
   if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
     triggerAIMove();
   }
+
+  return true;
 }
 
 /**
@@ -224,10 +218,6 @@ function triggerAIMove() {
     updateStatus();
     updateUndoButton();
 
-    // AI 完成后恢复玩家计时
-    if (!GameState.isGameOver && GameState.board.currentPlayer === 1) {
-      startTimer();
-    }
   }, 500);
 }
 
@@ -421,9 +411,9 @@ function updateUndoButton() {
 
 function startTimer() {
   if (GameState.isGameOver || GameState.isReplaying) return;
-  if (GameState.mode === 'ai' && GameState.board.currentPlayer !== 1) return;
 
   const player = GameState.board.currentPlayer === 1 ? 'black' : 'white';
+  TimerState[player] = TIMER_LIMIT;
   TimerState.active = player;
   updateTimerDisplay();
 
