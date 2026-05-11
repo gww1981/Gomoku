@@ -334,6 +334,33 @@
         2px 3px 6px var(--stone-shadow);
 }
 
+/* ==================== 最后落子高亮 ==================== */
+.cell.last-move::before,
+.cell.last-move::after {
+    z-index: 0;
+}
+
+.cell.last-move .stone-black,
+.cell.last-move .stone-white {
+    position: relative;
+}
+
+.cell.last-move .stone-black::after,
+.cell.last-move .stone-white::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 34px;
+    height: 34px;
+    border: 2px solid rgba(255, 215, 0, 0.9);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    pointer-events: none;
+    animation: lastMovePulse 1s ease-in-out infinite;
+}
+
 @keyframes winGlow {
     0% {
         filter: brightness(1) drop-shadow(0 0 8px var(--win-glow));
@@ -343,6 +370,24 @@
     }
     100% {
         filter: brightness(1) drop-shadow(0 0 8px var(--win-glow));
+    }
+}
+
+@keyframes lastMovePulse {
+    0%, 100% {
+        opacity: 0.55;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.08);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cell.last-move .stone-black::after,
+    .cell.last-move .stone-white::after {
+        animation: none;
     }
 }
 
@@ -377,6 +422,12 @@
         height: 18px;
     }
 
+    .cell.last-move .stone-black::after,
+    .cell.last-move .stone-white::after {
+        width: 24px;
+        height: 24px;
+    }
+
     .board {
         border-width: 5px;
         padding: 5px;
@@ -393,6 +444,12 @@
     .stone-white {
         width: 34px;
         height: 34px;
+    }
+
+    .cell.last-move .stone-black::after,
+    .cell.last-move .stone-white::after {
+        width: 42px;
+        height: 42px;
     }
 }
 
