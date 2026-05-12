@@ -201,9 +201,10 @@ function placeStone(row, col) {
   }
 
   // 切换回合
-  updateStatus();
-
   switchTimer();
+  if (!GameState.isAIThinking) {
+    updateStatusBar();
+  }
 
   // 如果是人机模式且是 AI 回合
   if (GameState.mode === 'ai' && GameState.board.currentPlayer === 2) {
@@ -218,7 +219,6 @@ function placeStone(row, col) {
  */
 function triggerAIMove() {
   GameState.isAIThinking = true;
-  updateStatus();
 
   if (GameState._aiTimer) {
     clearTimeout(GameState._aiTimer);
@@ -233,8 +233,8 @@ function triggerAIMove() {
 
     GameState.isAIThinking = false;
     GameState._aiTimer = null;
-    updateStatus();
     updateUndoButton();
+    updateStatusBar();
 
   }, 500);
 }
