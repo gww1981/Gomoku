@@ -9,23 +9,52 @@
 <body>
   <div id="qunit"></div>
   <div id="qunit-fixture"></div>
-  <div id="board"></div>
-  <div id="status-bar">
-    <span id="status">选择模式后点击开始</span>
-    <span id="status-actions"></span>
+  <div class="game-container">
+    <header class="header">
+      <h1>五子棋</h1>
+      <div class="header-controls">
+        <div class="mode-selector">
+          <button type="button" class="mode-btn active" data-mode="pvp">双人</button>
+          <button type="button" class="mode-btn" data-mode="ai">人机</button>
+        </div>
+        <select id="difficulty"></select>
+        <button id="settings"></button>
+      </div>
+    </header>
+    <main class="game-shell">
+      <section id="status-bar" class="game-status">
+        <span id="timer-black" class="timer-chip"></span>
+        <div class="status-center">
+          <span id="status">选择模式后点击开始</span>
+          <span id="status-actions"></span>
+        </div>
+        <span id="timer-white" class="timer-chip"></span>
+      </section>
+      <section class="board-stage">
+        <div id="board" class="board"></div>
+      </section>
+      <section class="game-actions">
+        <span class="action-hint">黑方先手</span>
+        <span class="action-hint">30 秒一步</span>
+      </section>
+    </main>
   </div>
-  <button id="start-btn" class="start-btn" style="display:none;"></button>
-  <button id="restart-btn" style="display:none;"></button>
-  <button id="undo-btn" style="display:none;"></button>
-  <select id="difficulty"></select>
-  <button id="settings"></button>
-  <div class="mode-selector">
-    <button type="button" class="mode-btn active" data-mode="pvp">双人</button>
-    <button type="button" class="mode-btn" data-mode="ai">人机</button>
-  </div>
-  <span id="timer-black"></span>
-  <span id="timer-white"></span>
   <script src="lib/qunit.js"></script>
+  <script>
+    window.__qunitFailures = [];
+    QUnit.log(function(details) {
+      if (!details.result) {
+        window.__qunitFailures.push({
+          module: details.module,
+          name: details.name,
+          message: details.message
+        });
+      }
+    });
+    QUnit.done(function(details) {
+      window.__qunitDone = details;
+    });
+  </script>
   <script>
     window.initAudioManager = function() {};
     window.initReplayManager = function() {};
@@ -39,5 +68,6 @@
   <script src="ui-core-last-move.test.js"></script>
   <script src="audio-manager.test.js"></script>
   <script src="ui-core-mode-selection.test.js"></script>
+  <script src="ui-layout.test.js"></script>
 </body>
 </html>
