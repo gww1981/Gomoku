@@ -120,6 +120,8 @@ function bindEvents() {
       }
 
       restartGame();
+      GameState.isStarted = false;
+      updateStatusBar();
     });
   });
 
