@@ -340,13 +340,13 @@
     z-index: 0;
 }
 
-.cell.last-move .stone-black,
-.cell.last-move .stone-white {
+.cell.last-move.stone-black,
+.cell.last-move.stone-white {
     position: relative;
 }
 
-.cell.last-move .stone-black::after,
-.cell.last-move .stone-white::after {
+.cell.last-move.stone-black::after,
+.cell.last-move.stone-white::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -358,6 +358,7 @@
     transform: translate(-50%, -50%);
     box-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
     pointer-events: none;
+    z-index: 2;
     animation: lastMovePulse 1s ease-in-out infinite;
 }
 
@@ -385,8 +386,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .cell.last-move .stone-black::after,
-    .cell.last-move .stone-white::after {
+    .cell.last-move.stone-black::after,
+    .cell.last-move.stone-white::after {
         animation: none;
     }
 }
@@ -422,8 +423,8 @@
         height: 18px;
     }
 
-    .cell.last-move .stone-black::after,
-    .cell.last-move .stone-white::after {
+    .cell.last-move.stone-black::after,
+    .cell.last-move.stone-white::after {
         width: 24px;
         height: 24px;
     }
@@ -446,8 +447,8 @@
         height: 34px;
     }
 
-    .cell.last-move .stone-black::after,
-    .cell.last-move .stone-white::after {
+    .cell.last-move.stone-black::after,
+    .cell.last-move.stone-white::after {
         width: 42px;
         height: 42px;
     }
