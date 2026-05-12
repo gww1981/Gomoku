@@ -371,16 +371,6 @@ function updateStatusBar() {
 }
 
 /**
- * 更新重新开始按钮状态
- */
-function updateRestartButton() {
-  const restartBtn = document.getElementById('restart');
-  if (restartBtn) {
-    restartBtn.textContent = GameState.isGameOver ? '再来一局' : '重新开始';
-  }
-}
-
-/**
  * 悔棋逻辑
  */
 function undoLastMove() {
@@ -532,8 +522,7 @@ function handleTimeout(player) {
     status.className = 'status win';
   }
 
-  updateRestartButton();
-  updateUndoButton();
+  updateStatusBar();
 }
 
 /**
