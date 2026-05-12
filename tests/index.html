@@ -10,10 +10,19 @@
   <div id="qunit"></div>
   <div id="qunit-fixture"></div>
   <div id="board"></div>
-  <div id="status"></div>
-  <button id="restart"></button>
-  <button id="undo-btn"></button>
+  <div id="status-bar">
+    <span id="status">选择模式后点击开始</span>
+    <span id="status-actions"></span>
+  </div>
+  <button id="start-btn" class="start-btn" style="display:none;"></button>
+  <button id="restart-btn" style="display:none;"></button>
+  <button id="undo-btn" style="display:none;"></button>
   <select id="difficulty"></select>
+  <button id="settings"></button>
+  <div class="mode-selector">
+    <button type="button" class="mode-btn active" data-mode="pvp">双人</button>
+    <button type="button" class="mode-btn" data-mode="ai">人机</button>
+  </div>
   <span id="timer-black"></span>
   <span id="timer-white"></span>
   <script src="lib/qunit.js"></script>
@@ -29,5 +38,6 @@
   <script src="board.test.js"></script>
   <script src="ui-core-last-move.test.js"></script>
   <script src="audio-manager.test.js"></script>
+  <script src="ui-core-mode-selection.test.js"></script>
 </body>
 </html>
