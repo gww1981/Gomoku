@@ -13,7 +13,8 @@ const GameState = {
   isGameOver: false,    // 游戏是否结束
   isAIThinking: false,  // AI 是否正在思考
   moveHistory: [],      // 落子记录 [{row, col, player}, ...]
-  isReplaying: false    // 回放状态标志
+  isReplaying: false,   // 回放状态标志
+  isStarted: false       // 游戏是否已开始
 };
 
 // 计时器常量
@@ -63,20 +64,22 @@ function initGame() {
   GameState.board = new Board(BOARD_SIZE);
   GameState.isGameOver = false;
   GameState.isAIThinking = false;
+  GameState.isStarted = false;
 
   // 创建棋盘 DOM
   createBoardDOM();
+
+  // 添加 waiting 状态
+  document.getElementById('board').classList.add('waiting');
 
   // 绑定事件
   bindEvents();
 
   // 更新状态显示
-  updateStatus();
-  updateRestartButton();
+  updateStatusBar();
 
   // 启动计时器
   resetTimers();
-  startTimer();
 }
 
 /**
@@ -128,18 +131,6 @@ function bindEvents() {
     });
   }
 
-  // 重新开始按钮
-  const restartBtn = document.getElementById('restart');
-  if (restartBtn) {
-    restartBtn.addEventListener('click', restartGame);
-  }
-
-  // 悔棋按钮
-  const undoBtn = document.getElementById('undo-btn');
-  if (undoBtn) {
-    undoBtn.addEventListener('click', undoLastMove);
-  }
-
   // 棋盘点击事件（事件委托）
   const boardElement = document.getElementById('board');
   if (boardElement) {
@@ -155,6 +146,7 @@ function bindEvents() {
  * @param {Event} e - 点击事件
  */
 function handleBoardClick(e) {
+  if (!GameState.isStarted) return;  // 未开始时拦截
   if (GameState.isGameOver || GameState.isAIThinking) return;
   if (GameState.isReplaying) return;
 
@@ -166,6 +158,7 @@ function handleBoardClick(e) {
 
   if (placeStone(row, col)) {
     updateUndoButton();
+    updateStatusBar();
   }
 }
 
@@ -295,8 +288,7 @@ function handleWin(player, winLine) {
     );
   }
 
-  updateRestartButton();
-  updateUndoButton();
+  updateStatusBar();
 }
 
 /**
@@ -321,22 +313,42 @@ function handleDraw() {
     );
   }
 
-  updateRestartButton();
-  updateUndoButton();
+  updateStatusBar();
 }
 
 /**
- * 更新回合提示
+ * 更新状态栏（统一处理三种页面状态）
  */
-function updateStatus() {
-  const status = document.getElementById('status');
-  if (!status) return;
+function updateStatusBar() {
+  const statusEl = document.getElementById('status');
+  const actionsEl = document.getElementById('status-actions');
+  const boardEl = document.getElementById('board');
+  if (!statusEl || !actionsEl) return;
 
-  if (GameState.isGameOver) return;
+  if (!GameState.isStarted) {
+    // === 未开始状态 ===
+    boardEl.classList.add('waiting');
+    statusEl.textContent = '选择模式后点击开始';
+    statusEl.className = '';
+    actionsEl.innerHTML = '<button id="start-btn" class="start-btn">▶开始</button>';
+    bindStartButton();
+    return;
+  }
 
+  boardEl.classList.remove('waiting');
+
+  if (GameState.isGameOver) {
+    // === 已结束状态 ===
+    actionsEl.innerHTML = '<button id="restart-btn">再来一局</button><button id="undo-btn">悔棋</button>';
+    bindStatusBarButtons();
+    return;
+  }
+
+  // === 进行中状态 ===
   if (GameState.isAIThinking) {
-    status.textContent = 'AI 正在思考...';
-    status.className = 'status thinking';
+    statusEl.textContent = 'AI 正在思考...';
+    statusEl.className = 'thinking';
+    actionsEl.innerHTML = '';
     return;
   }
 
@@ -345,12 +357,15 @@ function updateStatus() {
 
   if (GameState.mode === 'ai') {
     const playerText = currentPlayer === 1 ? '你' : 'AI';
-    status.textContent = `${playerText}的回合（${playerName}）`;
+    statusEl.textContent = `${playerText}的回合（${playerName}）`;
   } else {
-    status.textContent = `${playerName}的回合`;
+    statusEl.textContent = `${playerName}的回合`;
   }
+  statusEl.className = currentPlayer === 1 ? 'black-turn' : 'white-turn';
 
-  status.className = 'status';
+  actionsEl.innerHTML = '<button id="restart-btn">重新开始</button><button id="undo-btn">悔棋</button>';
+  bindStatusBarButtons();
+  updateUndoButton();
 }
 
 /**
@@ -400,12 +415,13 @@ function undoLastMove() {
   restoreLastMoveHighlightFromHistory();
 
   // 更新状态
-  updateStatus();
-  updateRestartButton();
+  updateStatusBar();
   updateUndoButton();
 
   // 重新启动计时器
-  startTimer();
+  if (GameState.isStarted) {
+    startTimer();
+  }
 }
 
 /**
@@ -540,8 +556,10 @@ function restartGame() {
   GameState.moveHistory = [];
 
   // 重置计时器
-  resetTimers();
-  startTimer();
+  if (GameState.isStarted) {
+    resetTimers();
+    startTimer();
+  }
 
   // 清空棋盘显示
   const cells = document.querySelectorAll('.cell');
@@ -550,9 +568,45 @@ function restartGame() {
   });
 
   // 更新状态
-  updateStatus();
-  updateRestartButton();
+  updateStatusBar();
   updateUndoButton();
+}
+
+/**
+ * 绑定开始按钮
+ */
+function bindStartButton() {
+  const startBtn = document.getElementById('start-btn');
+  if (startBtn) {
+    startBtn.addEventListener('click', startGame);
+  }
+}
+
+/**
+ * 绑定状态栏内的重新开始/再来一局和悔棋按钮
+ */
+function bindStatusBarButtons() {
+  const restartBtn = document.getElementById('restart-btn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      restartGame();
+    });
+  }
+
+  const undoBtn = document.getElementById('undo-btn');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', undoLastMove);
+  }
+}
+
+/**
+ * 开始游戏
+ */
+function startGame() {
+  GameState.isStarted = true;
+  resetTimers();
+  startTimer();
+  updateStatusBar();
 }
 
 // 页面加载完成后初始化游戏
