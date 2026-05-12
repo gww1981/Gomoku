@@ -3,7 +3,12 @@
  * TDD RED 阶段：这些测试应该失败，因为 AudioManager 还未实现
  */
 
-QUnit.module('AudioManager', function() {
+QUnit.module('AudioManager', function(hooks) {
+  hooks.beforeEach(function() {
+    localStorage.removeItem('gomoku_music_volume');
+    localStorage.removeItem('gomoku_music_muted');
+    localStorage.removeItem('gomoku_music_current');
+  });
 
   QUnit.test('AudioManager should exist as a class', function(assert) {
     assert.equal(typeof AudioManager, 'function', 'AudioManager should be a function');
