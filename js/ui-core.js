@@ -338,6 +338,8 @@ function updateStatusBar() {
   }
 
   boardEl.classList.remove('waiting');
+  boardEl.classList.toggle('turn-black', currentPlayer === 1);
+  boardEl.classList.toggle('turn-white', currentPlayer === 2);
 
   if (GameState.isGameOver) {
     // === 已结束状态 ===
