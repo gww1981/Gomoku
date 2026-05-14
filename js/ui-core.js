@@ -17,16 +17,12 @@ const GameState = {
   isStarted: false       // 游戏是否已开始
 };
 
-// 计时器常量
-const TIMER_LIMIT = 30;
+// 计时器常量 (已迁移到 TimerController.TIMER_LIMIT)
+// 保留向后兼容常量
+const TIMER_LIMIT = TimerController.TIMER_LIMIT;
 
-// 计时器状态
-const TimerState = {
-  black: TIMER_LIMIT,
-  white: TIMER_LIMIT,
-  interval: null,
-  active: null // 'black' | 'white' | null
-};
+// 全局计时器控制器实例
+let timerController;
 
 function clearLastMoveHighlight() {
   document.querySelectorAll('.cell.last-move').forEach((el) => {
@@ -60,6 +56,12 @@ function initGame() {
 
   // 初始化录像管理器
   initReplayManager();
+
+  // 初始化计时器控制器
+  timerController = new TimerController();
+  timerController.on('timerExpired', function(data) {
+    handleTimeout(data.player);
+  });
 
   GameState.board = new Board(BOARD_SIZE);
   GameState.isGameOver = false;
@@ -449,29 +451,12 @@ function startTimer() {
   if (GameState.isGameOver || GameState.isReplaying) return;
 
   const player = GameState.board.currentPlayer === 1 ? 'black' : 'white';
-  TimerState[player] = TIMER_LIMIT;
-  TimerState.active = player;
+  timerController.start(player);
   updateTimerDisplay();
-
-  if (TimerState.interval) clearInterval(TimerState.interval);
-  TimerState.interval = setInterval(() => {
-    TimerState[player]--;
-    updateTimerDisplay();
-
-    if (TimerState[player] <= 0) {
-      clearInterval(TimerState.interval);
-      TimerState.interval = null;
-      handleTimeout(player);
-    }
-  }, 1000);
 }
 
 function stopTimer() {
-  if (TimerState.interval) {
-    clearInterval(TimerState.interval);
-    TimerState.interval = null;
-  }
-  TimerState.active = null;
+  timerController.stop();
   updateTimerDisplay();
 }
 
@@ -481,9 +466,7 @@ function switchTimer() {
 }
 
 function resetTimers() {
-  stopTimer();
-  TimerState.black = TIMER_LIMIT;
-  TimerState.white = TIMER_LIMIT;
+  timerController.reset();
   updateTimerDisplay();
 }
 
@@ -492,14 +475,18 @@ function updateTimerDisplay() {
   const whiteEl = document.getElementById('timer-white');
   if (!blackEl || !whiteEl) return;
 
-  blackEl.textContent = `黑方 ${TimerState.black}s`;
-  whiteEl.textContent = `白方 ${TimerState.white}s`;
+  const blackTime = timerController.getRemainingTime('black');
+  const whiteTime = timerController.getRemainingTime('white');
+  const active = timerController.state.active;
 
-  blackEl.classList.toggle('timer-active', TimerState.active === 'black');
-  whiteEl.classList.toggle('timer-active', TimerState.active === 'white');
+  blackEl.textContent = `黑方 ${blackTime}s`;
+  whiteEl.textContent = `白方 ${whiteTime}s`;
+
+  blackEl.classList.toggle('timer-active', active === 'black');
+  whiteEl.classList.toggle('timer-active', active === 'white');
 
   [blackEl, whiteEl].forEach((el, i) => {
-    const time = i === 0 ? TimerState.black : TimerState.white;
+    const time = i === 0 ? blackTime : whiteTime;
     el.classList.remove('timer-warning', 'timer-critical');
     if (time <= 3) {
       el.classList.add('timer-critical');
