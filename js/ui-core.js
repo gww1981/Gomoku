@@ -225,7 +225,7 @@ function triggerAIMove() {
   }
 
   GameState._aiTimer = setTimeout(() => {
-    const aiMove = getAIMove(GameState.board.grid, GameState.difficulty);
+    const aiMove = getAIMove(GameState.board, GameState.difficulty);
 
     if (aiMove) {
       placeStone(aiMove.row, aiMove.col);
@@ -338,6 +338,7 @@ function updateStatusBar() {
   }
 
   boardEl.classList.remove('waiting');
+  const currentPlayer = GameState.board.currentPlayer;
   boardEl.classList.toggle('turn-black', currentPlayer === 1);
   boardEl.classList.toggle('turn-white', currentPlayer === 2);
 
@@ -356,7 +357,6 @@ function updateStatusBar() {
     return;
   }
 
-  const currentPlayer = GameState.board.currentPlayer;
   const playerName = currentPlayer === 1 ? '黑方' : '白方';
 
   if (GameState.mode === 'ai') {
