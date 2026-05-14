@@ -73,4 +73,75 @@ QUnit.module('UI Core Timer Display', function(hooks) {
     assert.ok(whiteTimerEl.classList.contains('timer-active'), '白方计时器切换后激活');
     assert.ok(!blackTimerEl.classList.contains('timer-active'), '黑方计时器切换后非激活');
   });
+
+  // Issue #33: 验证落子后计时器 UI 显示的秒数与 TimerController 实际剩余时间一致
+  QUnit.test('placeStone 后计时器 UI 显示的秒数应与 TimerController 实际剩余时间一致', function(assert) {
+    // 初始化游戏
+    GameState.board = new Board(BOARD_SIZE || 15);
+    GameState.isStarted = true;
+    resetTimers();
+    startTimer();
+
+    var blackTimerEl = document.getElementById('timer-black');
+    var whiteTimerEl = document.getElementById('timer-white');
+
+    // 获取 TimerController 的实际剩余时间
+    var timerController = getTimerController();
+    var expectedBlackTime = timerController.getRemainingTime('black');
+    var expectedWhiteTime = timerController.getRemainingTime('white');
+
+    // 验证初始 UI 显示与 TimerController 一致
+    var blackMatch = blackTimerEl.textContent.includes(expectedBlackTime + 's');
+    var whiteMatch = whiteTimerEl.textContent.includes(expectedWhiteTime + 's');
+    assert.ok(blackMatch, '黑方计时器 UI 显示应为 ' + expectedBlackTime + 's，实际: ' + blackTimerEl.textContent);
+    assert.ok(whiteMatch, '白方计时器 UI 显示应为 ' + expectedWhiteTime + 's，实际: ' + whiteTimerEl.textContent);
+
+    // 落子切换计时器（黑方 -> 白方）
+    placeStone(7, 7);
+
+    // 获取切换后的 TimerController 剩余时间
+    var newBlackTime = timerController.getRemainingTime('black');
+    var newWhiteTime = timerController.getRemainingTime('white');
+
+    // 验证 UI 显示与切换后的 TimerController 一致
+    var newBlackMatch = blackTimerEl.textContent.includes(newBlackTime + 's');
+    var newWhiteMatch = whiteTimerEl.textContent.includes(newWhiteTime + 's');
+    assert.ok(newBlackMatch, '落子后黑方计时器 UI 显示应为 ' + newBlackTime + 's，实际: ' + blackTimerEl.textContent);
+    assert.ok(newWhiteMatch, '落子后白方计时器 UI 显示应为 ' + newWhiteTime + 's，实际: ' + whiteTimerEl.textContent);
+  });
+
+  // Issue #33: 验证计时器切换后显示的秒数正确（端到端测试）
+  QUnit.test('计时器切换后秒数显示正确（端到端）', function(assert) {
+    // 初始化
+    GameState.board = new Board(BOARD_SIZE || 15);
+    GameState.isStarted = true;
+    resetTimers();
+    startTimer();
+
+    var blackTimerEl = document.getElementById('timer-black');
+    var whiteTimerEl = document.getElementById('timer-white');
+
+    // 初始状态：黑方计时器激活，白方非激活
+    assert.ok(blackTimerEl.classList.contains('timer-active'), '初始时黑方计时器激活');
+    assert.ok(!whiteTimerEl.classList.contains('timer-active'), '初始时白方计时器非激活');
+
+    // 黑方落子 (7,7)，切换到白方
+    placeStone(7, 7);
+
+    // 验证白方计时器激活
+    assert.ok(whiteTimerEl.classList.contains('timer-active'), '白方落子后白方计时器激活');
+
+    // 等待 1 秒让计时器递减
+    var done = assert.async();
+    setTimeout(function() {
+      // 白方计时器应该递减了 1 秒
+      var expectedWhiteTime = getTimerController().getRemainingTime('white');
+      var actualWhiteTime = parseInt(whiteTimerEl.textContent.match(/(\d+)s/)[1], 10);
+
+      assert.equal(actualWhiteTime, expectedWhiteTime,
+        '白方计时器 UI 显示 ' + actualWhiteTime + 's 应等于 TimerController 的 ' + expectedWhiteTime + 's');
+
+      done();
+    }, 1100);
+  });
 });
