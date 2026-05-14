@@ -471,6 +471,7 @@ function stopTimer() {
 function switchTimer() {
   stopTimer();
   startTimer();
+  updateTimerDisplay();
 }
 
 function resetTimers() {
