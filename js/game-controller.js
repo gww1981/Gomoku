@@ -1,6 +1,8 @@
 /**
  * GameController - 统一游戏状态管理
  * 继承 EventEmitter，管理所有游戏状态变更
+ *
+ * @module GameController
  */
 
 /**
