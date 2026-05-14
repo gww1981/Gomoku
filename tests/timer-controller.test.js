@@ -86,29 +86,21 @@ QUnit.module('TimerController', function() {
   });
 
   QUnit.test('timerExpired 事件应在时间耗尽时触发', async function(assert) {
-    const timer = new TimerController();
-    // 使用一个很短的初始时间来快速测试
-    const originalLimit = TimerController.TIMER_LIMIT;
-    TimerController.TIMER_LIMIT = 1;
-
+    const timer = new TimerController(1); // 使用实例 limit 参数，不污染类属性
     let expiredPlayer = null;
 
-    try {
-      timer.on('timerExpired', function(data) {
-        expiredPlayer = data.player;
-      });
+    timer.on('timerExpired', function(data) {
+      expiredPlayer = data.player;
+    });
 
-      timer.start('black');
+    timer.start('black');
 
-      // 等待 1.5 秒
-      await wait(1500);
+    // 等待 1.5 秒
+    await wait(1500);
 
-      assert.equal(expiredPlayer, 'black', 'timerExpired 事件正确触发');
-    } finally {
-      // 恢复原始值
-      TimerController.TIMER_LIMIT = originalLimit;
-      timer.stop();
-    }
+    assert.equal(expiredPlayer, 'black', 'timerExpired 事件正确触发');
+
+    timer.stop();
   });
 
   QUnit.test('timerTick 事件应包含正确的 black 和 white 状态', async function(assert) {
