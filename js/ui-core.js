@@ -361,7 +361,9 @@ function updateStatusBar() {
   if (GameState.isAIThinking) {
     statusEl.textContent = 'AI 正在思考...';
     statusEl.className = 'thinking';
-    actionsEl.innerHTML = '';
+    // 保持按钮但禁用，避免状态栏高度变化导致棋盘抖动
+    actionsEl.innerHTML = '<button id="restart-btn" disabled>重新开始</button><button id="undo-btn" disabled>悔棋</button>';
+    bindStatusBarButtons();
     return;
   }
 
