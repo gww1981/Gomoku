@@ -93,19 +93,22 @@ QUnit.module('TimerController', function() {
 
     let expiredPlayer = null;
 
-    timer.on('timerExpired', function(data) {
-      expiredPlayer = data.player;
-    });
+    try {
+      timer.on('timerExpired', function(data) {
+        expiredPlayer = data.player;
+      });
 
-    timer.start('black');
+      timer.start('black');
 
-    // 等待 1.5 秒
-    await wait(1500);
+      // 等待 1.5 秒
+      await wait(1500);
 
-    assert.equal(expiredPlayer, 'black', 'timerExpired 事件正确触发');
-
-    // 恢复原始值
-    TimerController.TIMER_LIMIT = originalLimit;
+      assert.equal(expiredPlayer, 'black', 'timerExpired 事件正确触发');
+    } finally {
+      // 恢复原始值
+      TimerController.TIMER_LIMIT = originalLimit;
+      timer.stop();
+    }
   });
 
   QUnit.test('timerTick 事件应包含正确的 black 和 white 状态', async function(assert) {

@@ -10,7 +10,7 @@ QUnit.module('模式选择与开始按钮', function(hooks) {
     GameState.isAIThinking = false;
     GameState.isStarted = false;
     GameState.moveHistory = [];
-    GameState.board.reset();
+    GameState.board = new Board(BOARD_SIZE || 15);
 
     // 重置 DOM 状态
     var board = document.getElementById('board');

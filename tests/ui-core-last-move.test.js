@@ -4,6 +4,10 @@
 QUnit.module('UI Core Last Move Highlight', function(hooks) {
   hooks.beforeEach(function() {
     GameState.mode = 'pvp';
+    GameState.board = new Board(BOARD_SIZE || 15);
+    if (typeof createBoardDOM === 'function') {
+      createBoardDOM();
+    }
     if (typeof restartGame === 'function') {
       restartGame();
     }

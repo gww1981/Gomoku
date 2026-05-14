@@ -21,8 +21,15 @@ const GameState = {
 // 保留向后兼容常量
 const TIMER_LIMIT = TimerController.TIMER_LIMIT;
 
-// 全局计时器控制器实例
-let timerController;
+// 全局计时器控制器实例（懒加载初始化）
+var timerController;
+
+function getTimerController() {
+  if (!timerController) {
+    timerController = new TimerController();
+  }
+  return timerController;
+}
 
 function clearLastMoveHighlight() {
   document.querySelectorAll('.cell.last-move').forEach((el) => {
@@ -58,8 +65,7 @@ function initGame() {
   initReplayManager();
 
   // 初始化计时器控制器
-  timerController = new TimerController();
-  timerController.on('timerExpired', function(data) {
+  getTimerController().on('timerExpired', function(data) {
     handleTimeout(data.player);
   });
 
@@ -451,12 +457,12 @@ function startTimer() {
   if (GameState.isGameOver || GameState.isReplaying) return;
 
   const player = GameState.board.currentPlayer === 1 ? 'black' : 'white';
-  timerController.start(player);
+  getTimerController().start(player);
   updateTimerDisplay();
 }
 
 function stopTimer() {
-  timerController.stop();
+  getTimerController().stop();
   updateTimerDisplay();
 }
 
@@ -466,7 +472,7 @@ function switchTimer() {
 }
 
 function resetTimers() {
-  timerController.reset();
+  getTimerController().reset();
   updateTimerDisplay();
 }
 
@@ -475,9 +481,9 @@ function updateTimerDisplay() {
   const whiteEl = document.getElementById('timer-white');
   if (!blackEl || !whiteEl) return;
 
-  const blackTime = timerController.getRemainingTime('black');
-  const whiteTime = timerController.getRemainingTime('white');
-  const active = timerController.state.active;
+  const blackTime = getTimerController().getRemainingTime('black');
+  const whiteTime = getTimerController().getRemainingTime('white');
+  const active = getTimerController().state.active;
 
   blackEl.textContent = `黑方 ${blackTime}s`;
   whiteEl.textContent = `白方 ${whiteTime}s`;
