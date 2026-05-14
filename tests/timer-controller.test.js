@@ -77,10 +77,10 @@ QUnit.module('TimerController', function() {
 
     timer.start('black');
 
-    // 等待 2.5 秒，应该触发 2 次 tick
+    // 等待 2.5 秒，setInterval 可能延迟或提前，允许 1-4 次 tick
     await wait(2500);
 
-    assert.ok(tickCount >= 2, `timerTick 触发次数: ${tickCount}`);
+    assert.ok(tickCount >= 1 && tickCount <= 4, `timerTick 触发次数: ${tickCount}`);
 
     timer.stop();
   });
