@@ -12,10 +12,11 @@ TimerController.TIMER_LIMIT = 30;
  */
 function TimerController(limit) {
   EventEmitter.call(this);
+  this.limit = limit || TimerController.TIMER_LIMIT;
 
   this.state = {
-    black: limit || TimerController.TIMER_LIMIT,
-    white: limit || TimerController.TIMER_LIMIT,
+    black: this.limit,
+    white: this.limit,
     active: null, // 'black' | 'white' | null
     interval: null // setInterval ID
   };
@@ -36,8 +37,8 @@ TimerController.prototype.start = function(player) {
     clearInterval(this.state.interval);
   }
 
-  // 重置该玩家时间
-  this.state[player] = this.state[player] || TimerController.TIMER_LIMIT;
+  // 每次切换到该玩家回合，都应重置为完整步时
+  this.state[player] = this.limit;
   this.state.active = player;
 
   // 清除之前的 interval
@@ -101,8 +102,8 @@ TimerController.prototype.getRemainingTime = function(player) {
  */
 TimerController.prototype.reset = function() {
   this.stop();
-  this.state.black = TimerController.TIMER_LIMIT;
-  this.state.white = TimerController.TIMER_LIMIT;
+  this.state.black = this.limit;
+  this.state.white = this.limit;
 };
 
 // 导出 TimerController（支持 CommonJS 和全局）
