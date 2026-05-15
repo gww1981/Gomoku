@@ -103,6 +103,41 @@ QUnit.module('GameController', function() {
     assert.strictEqual(eventData.player, 1, 'event data player');
   });
 
+  QUnit.test('placeStone() should reset mover timer and start opponent timer', function(assert) {
+    var timer = new TimerController();
+    var controller = new GameController(timer);
+    var board = new Board(15);
+    controller.init(board);
+    controller.startGame();
+
+    timer.state.black = 24;
+
+    controller.placeStone(7, 7);
+
+    assert.strictEqual(timer.getRemainingTime('black'), TimerController.TIMER_LIMIT, 'mover timer reset');
+    assert.strictEqual(timer.getRemainingTime('white'), TimerController.TIMER_LIMIT, 'opponent timer starts at full limit');
+    assert.strictEqual(timer.state.active, 'white', 'opponent timer is active');
+
+    timer.stop();
+  });
+
+  QUnit.test('placeStone() should emit turnChanged after non-terminal move', function(assert) {
+    var timer = new TimerController();
+    var controller = new GameController(timer);
+    var board = new Board(15);
+    controller.init(board);
+
+    var eventData = null;
+    controller.on('turnChanged', function(data) {
+      eventData = data;
+    });
+
+    controller.placeStone(7, 7);
+
+    assert.ok(eventData, 'turnChanged event fired');
+    assert.strictEqual(eventData.player, 'white', 'turnChanged points at next timer player');
+  });
+
   QUnit.test('placeStone() should emit gameOver on win', function(assert) {
     var timer = new TimerController();
     var controller = new GameController(timer);
