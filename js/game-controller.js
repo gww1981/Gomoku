@@ -95,6 +95,8 @@ GameController.prototype.placeStone = function(row, col) {
     player: currentPlayer
   });
 
+  this.emit('stonePlaced', { row: row, col: col, player: currentPlayer });
+
   // 检查胜负
   var winLine = this.state.board.checkWin(row, col);
   if (winLine) {
@@ -109,11 +111,11 @@ GameController.prototype.placeStone = function(row, col) {
   }
 
   // 切换计时器
+  var previousPlayer = currentPlayer === 1 ? 'black' : 'white';
   var nextPlayer = currentPlayer === 1 ? 'white' : 'black';
   this.timerController.switchTo(nextPlayer);
-
-  // 触发落子事件
-  this.emit('stonePlaced', { row: row, col: col, player: currentPlayer });
+  this.timerController.state[previousPlayer] = this.timerController.limit;
+  this.emit('turnChanged', { player: nextPlayer });
 
   // 如果是人机模式且是 AI 回合
   if (this.state.mode === 'ai' && this.state.board.currentPlayer === 2) {
@@ -192,6 +194,7 @@ GameController.prototype._saveReplay = function() {
  */
 GameController.prototype.handleTimeout = function(player) {
   this.state.isGameOver = true;
+  this.timerController.stop();
   var winner = player === 'black' ? 2 : 1;
   this.emit('timeout', { player: player, winner: winner });
 };
