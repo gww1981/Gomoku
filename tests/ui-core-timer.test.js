@@ -144,4 +144,32 @@ QUnit.module('UI Core Timer Display', function(hooks) {
       done();
     }, 1100);
   });
+
+  QUnit.test('落子后自己计时器应重置为 30 秒，对方计时器启动', function(assert) {
+    var done = assert.async();
+
+    GameState.board = new Board(BOARD_SIZE || 15);
+    GameState.isStarted = true;
+    resetTimers();
+    startTimer();
+
+    setTimeout(function() {
+      // 黑方先走过至少 1 秒
+      var blackBeforeMove = getTimerController().getRemainingTime('black');
+      assert.ok(blackBeforeMove <= 29, '黑方在落子前已消耗时间');
+
+      // 黑方落子 -> 白方回合
+      placeStone(7, 7);
+
+      var blackAfterMove = getTimerController().getRemainingTime('black');
+      var whiteAfterMove = getTimerController().getRemainingTime('white');
+      var active = getTimerController().state.active;
+
+      assert.equal(blackAfterMove, TIMER_LIMIT, '黑方落子后自身计时重置为 30 秒');
+      assert.equal(whiteAfterMove, TIMER_LIMIT, '白方回合启动时为 30 秒');
+      assert.equal(active, 'white', '对方计时器已启动');
+
+      done();
+    }, 1100);
+  });
 });
