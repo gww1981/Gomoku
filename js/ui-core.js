@@ -482,8 +482,15 @@ function stopTimer() {
 }
 
 function switchTimer() {
+  const previousPlayer = getTimerController().state.active;
   stopTimer();
   startTimer();
+  const currentPlayer = getTimerController().state.active;
+
+  if (previousPlayer && previousPlayer !== currentPlayer) {
+    getTimerController().state[previousPlayer] = TIMER_LIMIT;
+  }
+
   updateTimerDisplay();
 }
 
