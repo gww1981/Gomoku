@@ -76,6 +76,20 @@ GameController.prototype.startGame = function() {
 };
 
 /**
+ * 玩家尝试落子
+ * @param {number} row - 行索引
+ * @param {number} col - 列索引
+ * @returns {boolean} 是否落子成功
+ */
+GameController.prototype.playMove = function(row, col) {
+  if (!this.state.isStarted) return false;
+  if (this.state.isGameOver || this.state.isAIThinking) return false;
+  if (this.state.isReplaying) return false;
+
+  return this.placeStone(row, col);
+};
+
+/**
  * 玩家落子
  * @param {number} row - 行索引
  * @param {number} col - 列索引

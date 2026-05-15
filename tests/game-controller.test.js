@@ -103,6 +103,51 @@ QUnit.module('GameController', function() {
     assert.strictEqual(eventData.player, 1, 'event data player');
   });
 
+  QUnit.test('playMove() should reject player moves before game start', function(assert) {
+    var timer = new TimerController();
+    var controller = new GameController(timer);
+    var board = new Board(15);
+    controller.init(board);
+
+    var result = controller.playMove(7, 7);
+
+    assert.strictEqual(result, false, 'move rejected');
+    assert.strictEqual(board.getStone(7, 7), 0, 'board remains empty');
+    assert.strictEqual(controller.state.moveHistory.length, 0, 'history remains empty');
+  });
+
+  QUnit.test('playMove() should accept player moves during active game', function(assert) {
+    var timer = new TimerController();
+    var controller = new GameController(timer);
+    var board = new Board(15);
+    controller.init(board);
+    controller.startGame();
+
+    var result = controller.playMove(7, 7);
+
+    assert.strictEqual(result, true, 'move accepted');
+    assert.strictEqual(board.getStone(7, 7), 1, 'stone placed');
+    assert.strictEqual(controller.state.moveHistory.length, 1, 'history updated');
+
+    timer.stop();
+  });
+
+  QUnit.test('playMove() should reject player moves while AI is thinking', function(assert) {
+    var timer = new TimerController();
+    var controller = new GameController(timer);
+    var board = new Board(15);
+    controller.init(board);
+    controller.startGame();
+    controller.state.isAIThinking = true;
+
+    var result = controller.playMove(7, 7);
+
+    assert.strictEqual(result, false, 'move rejected');
+    assert.strictEqual(board.getStone(7, 7), 0, 'board remains empty');
+
+    timer.stop();
+  });
+
   QUnit.test('placeStone() should reset mover timer and start opponent timer', function(assert) {
     var timer = new TimerController();
     var controller = new GameController(timer);
