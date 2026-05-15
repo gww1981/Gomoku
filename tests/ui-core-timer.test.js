@@ -145,29 +145,58 @@ QUnit.module('UI Core Timer Display', function(hooks) {
     }, 1100);
   });
 
-  QUnit.test('落子后自己计时器应重置为 30 秒，对方计时器启动', function(assert) {
+  QUnit.test('AI 模式下落子后应启动对方计时并重置自己计时', function(assert) {
     var done = assert.async();
 
+    GameState.mode = 'ai';
     GameState.board = new Board(BOARD_SIZE || 15);
     GameState.isStarted = true;
     resetTimers();
     startTimer();
 
     setTimeout(function() {
-      // 黑方先走过至少 1 秒
       var blackBeforeMove = getTimerController().getRemainingTime('black');
-      assert.ok(blackBeforeMove <= 29, '黑方在落子前已消耗时间');
+      assert.ok(blackBeforeMove <= 29, '玩家落子前黑方已消耗时间');
 
-      // 黑方落子 -> 白方回合
-      placeStone(7, 7);
+      placeStone(7, 7); // 玩家(黑方)落子 -> AI(白方)回合
 
       var blackAfterMove = getTimerController().getRemainingTime('black');
       var whiteAfterMove = getTimerController().getRemainingTime('white');
       var active = getTimerController().state.active;
 
-      assert.equal(blackAfterMove, TIMER_LIMIT, '黑方落子后自身计时重置为 30 秒');
-      assert.equal(whiteAfterMove, TIMER_LIMIT, '白方回合启动时为 30 秒');
-      assert.equal(active, 'white', '对方计时器已启动');
+      assert.equal(blackAfterMove, TIMER_LIMIT, '玩家落子后黑方计时重置为 30 秒');
+      assert.equal(whiteAfterMove, TIMER_LIMIT, 'AI 回合启动时白方为 30 秒');
+      assert.equal(active, 'white', 'AI 方计时器已启动');
+
+      done();
+    }, 1100);
+  });
+
+  QUnit.test('未开始状态下不应继续倒计时（切模式后）', function(assert) {
+    var done = assert.async();
+
+    GameState.mode = 'pvp';
+    GameState.board = new Board(BOARD_SIZE || 15);
+    GameState.isStarted = true;
+    resetTimers();
+    startTimer();
+
+    // 切模式会触发 restartGame，再将 isStarted 置为 false
+    var aiBtn = document.querySelector('.mode-btn[data-mode="ai"]');
+    aiBtn.click();
+
+    var activeAfterModeSwitch = getTimerController().state.active;
+    var blackAtSwitch = getTimerController().getRemainingTime('black');
+    var whiteAtSwitch = getTimerController().getRemainingTime('white');
+
+    setTimeout(function() {
+      var blackAfterWait = getTimerController().getRemainingTime('black');
+      var whiteAfterWait = getTimerController().getRemainingTime('white');
+
+      assert.equal(GameState.isStarted, false, '切模式后游戏处于未开始状态');
+      assert.equal(activeAfterModeSwitch, null, '切模式后不应有活跃计时器');
+      assert.equal(blackAfterWait, blackAtSwitch, '未开始时黑方时间不应继续减少');
+      assert.equal(whiteAfterWait, whiteAtSwitch, '未开始时白方时间不应继续减少');
 
       done();
     }, 1100);

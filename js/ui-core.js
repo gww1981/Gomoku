@@ -139,8 +139,9 @@ function bindEvents() {
         difficultySelect.classList.toggle('hidden', GameState.mode !== 'ai');
       }
 
-      restartGame();
       GameState.isStarted = false;
+      restartGame();
+      resetTimers();
       updateStatusBar();
     });
   });
@@ -486,7 +487,6 @@ function switchTimer() {
   stopTimer();
   startTimer();
   const currentPlayer = getTimerController().state.active;
-
   if (previousPlayer && previousPlayer !== currentPlayer) {
     getTimerController().state[previousPlayer] = TIMER_LIMIT;
   }
