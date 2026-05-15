@@ -251,20 +251,20 @@ function bindEvents() {
  * @param {Event} e - 点击事件
  */
 function handleBoardClick(e) {
-  if (!GameState.isStarted) return;  // 未开始时拦截
-  if (GameState.isGameOver || GameState.isAIThinking) return;
-  if (GameState.isReplaying) return;
-
   const cell = e.target.closest('.cell');
   if (!cell) return;
 
   const row = parseInt(cell.dataset.row, 10);
   const col = parseInt(cell.dataset.col, 10);
 
-  if (placeStone(row, col)) {
+  if (playMove(row, col)) {
     updateUndoButton();
     updateStatusBar();
   }
+}
+
+function playMove(row, col) {
+  return getGameController().playMove(row, col);
 }
 
 /**
