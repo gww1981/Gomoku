@@ -23,12 +23,26 @@ const TIMER_LIMIT = TimerController.TIMER_LIMIT;
 
 // 全局计时器控制器实例（懒加载初始化）
 var timerController;
+var timerEventsBound = false;
 
 function getTimerController() {
   if (!timerController) {
     timerController = new TimerController();
   }
   return timerController;
+}
+
+function bindTimerEventsIfNeeded() {
+  if (timerEventsBound) return;
+
+  getTimerController().on('timerExpired', function(data) {
+    handleTimeout(data.player);
+  });
+  getTimerController().on('timerTick', function() {
+    updateTimerDisplay();
+  });
+
+  timerEventsBound = true;
 }
 
 function clearLastMoveHighlight() {
@@ -64,10 +78,8 @@ function initGame() {
   // 初始化录像管理器
   initReplayManager();
 
-  // 初始化计时器控制器
-  getTimerController().on('timerExpired', function(data) {
-    handleTimeout(data.player);
-  });
+  // 初始化计时器事件
+  bindTimerEventsIfNeeded();
 
   GameState.board = new Board(BOARD_SIZE);
   GameState.isGameOver = false;
@@ -457,6 +469,7 @@ function updateUndoButton() {
 
 function startTimer() {
   if (GameState.isGameOver || GameState.isReplaying) return;
+  bindTimerEventsIfNeeded();
 
   const player = GameState.board.currentPlayer === 1 ? 'black' : 'white';
   getTimerController().start(player);
