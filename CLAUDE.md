@@ -68,6 +68,20 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues for `gww1981/Gomoku`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default five-label triage vocabulary. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repo using `docs/CONTEXT.md` for domain language and `docs/adr/` for architecture decisions. See `docs/agents/domain.md`.
+
 
 ## 项目概述
 
@@ -113,5 +127,4 @@ python -m http.server 8080
 ## 胜负判定
 
 横/竖/左斜/右斜方向连五即胜。获胜时亮显五子连线。
-
 
