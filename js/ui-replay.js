@@ -84,26 +84,79 @@ function startReplay(replayId) {
   stopTimer();
 
   const status = document.getElementById('status');
+  const actionsEl = document.getElementById('status-actions');
   if (status) {
     status.textContent = '录像回放中...';
     status.className = 'status';
   }
+
+  // 更新状态栏显示回放控制
+  updateReplayControls();
 
   replayManager.startReplay(
     replayId,
     // onStep
     (move) => {
       updateCellDisplay(move.row, move.col, move.player);
+      updateReplayControls();
     },
     // onComplete
     () => {
       GameState.isReplaying = false;
       GameState.moveHistory = [];
-      const status = document.getElementById('status');
       if (status) {
         status.textContent = '回放结束';
         status.className = 'status';
       }
+      if (actionsEl) {
+        actionsEl.innerHTML = '<button id="restart-btn">再来一局</button>';
+        bindStatusBarButtons();
+      }
+    },
+    // onClear
+    () => {
+      const cells = document.querySelectorAll('.cell');
+      cells.forEach(cell => { cell.className = 'cell'; });
     }
   );
+}
+
+/**
+ * 更新回放控制按钮和进度显示
+ */
+function updateReplayControls() {
+  const rm = window.replayManager;
+  if (!rm || !rm._replayData) return;
+
+  const actionsEl = document.getElementById('status-actions');
+  if (!actionsEl) return;
+
+  const prog = rm.getReplayProgress();
+  const isPaused = rm.isPaused();
+  const isAtEnd = prog.current >= prog.total;
+  const isAtStart = prog.current <= 0;
+
+  actionsEl.innerHTML = `
+    <button class="replay-ctrl" data-action="start" ${isAtStart ? 'disabled' : ''}>⏮</button>
+    <button class="replay-ctrl" data-action="back" ${isAtStart ? 'disabled' : ''}>⏪</button>
+    <span class="replay-progress">${prog.current}/${prog.total}</span>
+    <button class="replay-ctrl" data-action="${isPaused ? 'play' : 'pause'}">${isPaused ? '▶' : '⏸'}</button>
+    <button class="replay-ctrl" data-action="forward" ${isAtEnd ? 'disabled' : ''}>⏩</button>
+    <button class="replay-ctrl" data-action="end" ${isAtEnd ? 'disabled' : ''}>⏭</button>
+  `;
+
+  // 绑定回放控制事件
+  actionsEl.querySelectorAll('.replay-ctrl').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const action = this.dataset.action;
+      switch (action) {
+        case 'start': rm.goToStart(); updateReplayControls(); break;
+        case 'back': rm.stepBackward(); updateReplayControls(); break;
+        case 'forward': rm.stepForward(); updateReplayControls(); break;
+        case 'end': rm.goToEnd(); updateReplayControls(); break;
+        case 'pause': rm.pauseReplay(); updateReplayControls(); break;
+        case 'play': rm.resumeReplay(); updateReplayControls(); break;
+      }
+    });
+  });
 }

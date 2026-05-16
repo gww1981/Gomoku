@@ -13,6 +13,8 @@ class ReplayManager {
     this._replayIndex = 0;    // 当前回放步索引
     this._onStep = null;      // 步回调
     this._onComplete = null;  // 完成回调
+    this._onClear = null;     // 清空棋盘回调
+    this._replayPaused = false; // 是否暂停
   }
 
   // 保存录像
@@ -58,20 +60,123 @@ class ReplayManager {
   }
 
   // 回放指定录像
-  // 参数: id (string), onStep (function: move对象 -> void), onComplete (function: () -> void)
-  startReplay(id, onStep, onComplete) {
+  // 参数: id (string), onStep (function), onComplete (function), onClear (function)
+  startReplay(id, onStep, onComplete, onClear) {
     const replays = this._loadReplays();
     const replay = replays.find(r => r.id === id);
     if (!replay) return;
 
-    this.stopReplay(); // 停止当前回放
+    this.stopReplay();
 
     this._replayData = replay;
     this._replayIndex = 0;
+    this._replayPaused = false;
     this._onStep = onStep;
     this._onComplete = onComplete;
+    this._onClear = onClear;
 
     this._playNextStep();
+  }
+
+  // 暂停回放
+  pauseReplay() {
+    if (!this._replayData) return;
+    if (this._replayTimer) {
+      clearTimeout(this._replayTimer);
+      this._replayTimer = null;
+    }
+    this._replayPaused = true;
+  }
+
+  // 继续回放
+  resumeReplay() {
+    if (!this._replayData || !this._replayPaused) return;
+    this._replayPaused = false;
+    this._playNextStep();
+  }
+
+  // 前进一步
+  stepForward() {
+    if (!this._replayData) return;
+    // 停止自动播放
+    if (this._replayTimer) {
+      clearTimeout(this._replayTimer);
+      this._replayTimer = null;
+    }
+    this._replayPaused = true;
+
+    const { moves } = this._replayData;
+    if (this._replayIndex >= moves.length) return;
+
+    const move = moves[this._replayIndex];
+    if (this._onStep) this._onStep(move);
+    this._replayIndex++;
+
+    if (this._replayIndex >= moves.length) {
+      if (this._onComplete) this._onComplete();
+    }
+  }
+
+  // 后退一步（清空棋盘，重播到当前位置-1）
+  stepBackward() {
+    if (!this._replayData || this._replayIndex <= 0) return;
+    // 停止自动播放
+    if (this._replayTimer) {
+      clearTimeout(this._replayTimer);
+      this._replayTimer = null;
+    }
+    this._replayPaused = true;
+
+    this._replayIndex--;
+
+    // 清空并重播
+    if (this._onClear) this._onClear();
+    const { moves } = this._replayData;
+    for (let i = 0; i < this._replayIndex; i++) {
+      if (this._onStep) this._onStep(moves[i]);
+    }
+  }
+
+  // 跳到开头
+  goToStart() {
+    if (!this._replayData) return;
+    if (this._replayTimer) {
+      clearTimeout(this._replayTimer);
+      this._replayTimer = null;
+    }
+    this._replayPaused = true;
+    this._replayIndex = 0;
+    if (this._onClear) this._onClear();
+  }
+
+  // 跳到结尾
+  goToEnd() {
+    if (!this._replayData) return;
+    if (this._replayTimer) {
+      clearTimeout(this._replayTimer);
+      this._replayTimer = null;
+    }
+    this._replayPaused = true;
+
+    const { moves } = this._replayData;
+    this._replayIndex = moves.length;
+    if (this._onClear) this._onClear();
+    moves.forEach(move => { if (this._onStep) this._onStep(move); });
+    if (this._onComplete) this._onComplete();
+  }
+
+  // 获取回放进度
+  getReplayProgress() {
+    if (!this._replayData) return { current: 0, total: 0 };
+    return {
+      current: this._replayIndex,
+      total: this._replayData.moves.length
+    };
+  }
+
+  // 是否暂停
+  isPaused() {
+    return this._replayPaused;
   }
 
   // 停止回放
@@ -82,8 +187,10 @@ class ReplayManager {
     }
     this._replayData = null;
     this._replayIndex = 0;
+    this._replayPaused = false;
     this._onStep = null;
     this._onComplete = null;
+    this._onClear = null;
   }
 
   // 私有：读取录像数据
@@ -107,7 +214,7 @@ class ReplayManager {
 
   // 私有：播放下一步
   _playNextStep() {
-    if (!this._replayData) return;
+    if (!this._replayData || this._replayPaused) return;
 
     const { moves } = this._replayData;
 
