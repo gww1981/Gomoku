@@ -16,13 +16,55 @@ const DIRECTIONS = [
 ];
 
 /**
- * 简单难度：随机选择空位
+ * 简单难度：增强版 — 具备基本攻防意识
+ * 会完成连五、阻挡对手、并有随机性保持简单
  */
 function getEasyMove(board) {
   const emptyPositions = board.getEmptyPositions();
   if (emptyPositions.length === 0) return null;
-  const randomIndex = Math.floor(Math.random() * emptyPositions.length);
-  return emptyPositions[randomIndex];
+
+  // 1. 检查能否立刻获胜
+  for (const pos of emptyPositions) {
+    board.placeStone(pos.row, pos.col, AI_PLAYER);
+    const winLine = board.checkWin(pos.row, pos.col);
+    board.undoMove(pos.row, pos.col);
+    if (winLine) return pos;
+  }
+
+  // 2. 检查对手能否立刻获胜（阻挡）
+  for (const pos of emptyPositions) {
+    board.placeStone(pos.row, pos.col, PLAYER);
+    const winLine = board.checkWin(pos.row, pos.col);
+    board.undoMove(pos.row, pos.col);
+    if (winLine) return pos;
+  }
+
+  // 3. 用候选位置（已有棋子附近）做启发式评分
+  let candidates = getCandidateMoves(board);
+  if (candidates.length === 0) {
+    return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+  }
+
+  const scored = candidates.map(pos => ({
+    row: pos.row,
+    col: pos.col,
+    score: board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
+         + board.evaluatePosition(pos.row, pos.col, PLAYER)
+  }));
+
+  // 按评分降序排列
+  scored.sort((a, b) => b.score - a.score);
+
+  // 从 top 5 中加权随机选择（保持简单：不完全最优）
+  const topN = scored.slice(0, Math.min(5, scored.length));
+  const weightSum = topN.reduce((sum, m) => sum + Math.max(1, m.score), 0);
+  let rand = Math.random() * weightSum;
+  for (const move of topN) {
+    rand -= Math.max(1, move.score);
+    if (rand <= 0) return move;
+  }
+
+  return topN[0]; // 保底
 }
 
 /**

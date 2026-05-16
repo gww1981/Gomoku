@@ -158,6 +158,43 @@ describe('AI', () => {
     assert.equal(board.getStone(move.row, move.col), 0);
   });
 
+  it('getEasyMove takes immediate winning move', () => {
+    const board = new Board(15);
+    // AI (P2) has 4 in a row with an open end → should win
+    board.placeStone(0, 0, 1); // P1
+    board.placeStone(7, 7, 2); // P2
+    board.placeStone(0, 1, 1); // P1
+    board.placeStone(7, 8, 2); // P2
+    board.placeStone(0, 2, 1); // P1
+    board.placeStone(7, 9, 2); // P2
+    board.placeStone(0, 3, 1); // P1
+    board.placeStone(7, 10, 2); // P2 — 4 in a row
+
+    const move = getAIMove(board, 'easy');
+    assert.ok(move !== null, 'AI makes a move');
+    // AI should complete its 5-in-a-row at (7,6) or (7,11)
+    const wins = (move.row === 7 && (move.col === 6 || move.col === 11));
+    assert.ok(wins, `Expected win at (7,6) or (7,11), got (${move.row},${move.col})`);
+  });
+
+  it('getEasyMove blocks opponent immediate win', () => {
+    const board = new Board(15);
+    // P1 has 4 in a row, AI must block
+    board.placeStone(7, 7, 1); // P1 start
+    board.placeStone(0, 0, 2); // P2
+    board.placeStone(7, 8, 1); // P1
+    board.placeStone(0, 1, 2); // P2
+    board.placeStone(7, 9, 1); // P1
+    board.placeStone(0, 2, 2); // P2
+    board.placeStone(7, 10, 1); // P1 — 4 in a row!
+
+    const move = getAIMove(board, 'easy');
+    assert.ok(move !== null, 'AI makes a move');
+    // AI should block at (7,6) or (7,11)
+    const blocks = (move.row === 7 && (move.col === 6 || move.col === 11));
+    assert.ok(blocks, `Expected block at (7,6) or (7,11), got (${move.row},${move.col})`);
+  });
+
   it('getMediumMove blocks opponent 3-in-a-row threat', () => {
     const board = new Board(15);
     // P1 has 3 in a row horizontally: AI (P2) should block

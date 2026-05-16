@@ -139,7 +139,40 @@ class WorkerBoard {
 function getEasyMove(board) {
   const empty = board.getEmptyPositions();
   if (empty.length === 0) return null;
-  return empty[Math.floor(Math.random() * empty.length)];
+
+  // 检查能否立刻获胜
+  for (const pos of empty) {
+    const nb = board.simulateMove(pos.row, pos.col, AI_PLAYER);
+    if (nb.checkWinner(pos.row, pos.col) === AI_PLAYER) return pos;
+  }
+
+  // 阻挡对手立刻获胜
+  for (const pos of empty) {
+    const nb = board.simulateMove(pos.row, pos.col, PLAYER);
+    if (nb.checkWinner(pos.row, pos.col) === PLAYER) return pos;
+  }
+
+  // 用候选位置做启发式评分 + 加权随机
+  let candidates = board.getCandidateMoves();
+  if (candidates.length === 0) {
+    return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+  }
+
+  const scored = candidates.map(pos => ({
+    row: pos.row, col: pos.col,
+    score: board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
+         + board.evaluatePosition(pos.row, pos.col, PLAYER)
+  }));
+  scored.sort((a, b) => b.score - a.score);
+
+  const topN = scored.slice(0, Math.min(5, scored.length));
+  const weightSum = topN.reduce((sum, m) => sum + Math.max(1, m.score), 0);
+  let rand = Math.random() * weightSum;
+  for (const move of topN) {
+    rand -= Math.max(1, move.score);
+    if (rand <= 0) return move;
+  }
+  return topN[0];
 }
 
 function getMediumMove(board) {
