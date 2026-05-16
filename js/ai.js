@@ -53,8 +53,10 @@ function getMediumMove(board) {
  * 获取候选落子位置（减少搜索空间）
  */
 function getCandidateMoves(board) {
-  const candidates = new Set();
   const size = board.size;
+  const visited = Array.from({ length: size }, () => Array(size).fill(false));
+  const candidates = [];
+  let hasAny = false;
 
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
@@ -63,8 +65,11 @@ function getCandidateMoves(board) {
           for (let dc = -2; dc <= 2; dc++) {
             const nr = r + dr;
             const nc = c + dc;
-            if (nr >= 0 && nr < size && nc >= 0 && nc < size && board.getStone(nr, nc) === EMPTY) {
-              candidates.add(`${nr},${nc}`);
+            if (nr >= 0 && nr < size && nc >= 0 && nc < size
+                && board.getStone(nr, nc) === EMPTY && !visited[nr][nc]) {
+              visited[nr][nc] = true;
+              candidates.push({ row: nr, col: nc });
+              hasAny = true;
             }
           }
         }
@@ -72,15 +77,11 @@ function getCandidateMoves(board) {
     }
   }
 
-  if (candidates.size === 0) {
+  if (!hasAny) {
     const center = Math.floor(size / 2);
     return [{ row: center, col: center }];
   }
-
-  return Array.from(candidates).map(key => {
-    const [row, col] = key.split(',').map(Number);
-    return { row, col };
-  });
+  return candidates;
 }
 
 /**
@@ -170,11 +171,19 @@ function evaluateBoardScore(board, player) {
 const MAX_SEARCH_DEPTH = 4;
 
 function getHardMove(board) {
-  const candidates = getCandidateMoves(board);
+  let candidates = getCandidateMoves(board);
   if (candidates.length === 0) return null;
 
+  // Move Ordering: 按启发式评分降序排序（好的走法先搜 → 剪枝更多）
+  candidates = candidates.map(pos => ({
+    row: pos.row,
+    col: pos.col,
+    score: board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
+          + board.evaluatePosition(pos.row, pos.col, PLAYER)
+  })).sort((a, b) => b.score - a.score);
+
   let bestScore = -Infinity;
-  let bestMove = candidates[0];
+  let bestMove = { row: candidates[0].row, col: candidates[0].col };
 
   for (const move of candidates) {
     const newBoard = board.simulateMove(move.row, move.col, AI_PLAYER);
@@ -214,9 +223,66 @@ function getAIMove(board, difficulty) {
   }
 }
 
+// AI Worker 管理
+let _aiWorker = null;
+let _aiWorkerCallbacks = new Map();
+let _aiRequestId = 0;
+
+function _createAIWorker() {
+  try {
+    _aiWorker = new Worker('js/ai-worker.js');
+    _aiWorker.onmessage = function(e) {
+      const { id, move } = e.data;
+      const resolve = _aiWorkerCallbacks.get(id);
+      if (resolve) {
+        _aiWorkerCallbacks.delete(id);
+        resolve(move);
+      }
+    };
+    _aiWorker.onerror = function() {
+      _aiWorker = null; // 回退到同步模式
+    };
+  } catch (e) {
+    _aiWorker = null; // Worker 不可用
+  }
+}
+
+/**
+ * 异步 AI 入口 — 在 Worker 中运行（浏览器）或同步回退（Node.js）
+ * @param {Board} board - 棋盘对象
+ * @param {string} difficulty - 难度
+ * @returns {Promise<{row: number, col: number} | null>}
+ */
+function getAIMoveAsync(board, difficulty) {
+  // Worker 不可用（Node.js / 不支持）：同步回退
+  if (typeof Worker === 'undefined' || _aiWorker === null) {
+    return Promise.resolve(getAIMove(board, difficulty));
+  }
+
+  // 懒初始化 Worker
+  if (!_aiWorker) {
+    _createAIWorker();
+    if (!_aiWorker) {
+      return Promise.resolve(getAIMove(board, difficulty));
+    }
+  }
+
+  return new Promise(function(resolve) {
+    const id = ++_aiRequestId;
+    _aiWorkerCallbacks.set(id, resolve);
+    _aiWorker.postMessage({
+      type: 'getMove',
+      grid: board.grid,
+      currentPlayer: board.currentPlayer,
+      difficulty: difficulty,
+      id: id
+    });
+  });
+}
+
 // 导出模块
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getAIMove };
+  module.exports = { getAIMove, getAIMoveAsync };
 }
 
 // 测试代码

@@ -151,18 +151,18 @@ GameController.prototype._triggerAIMove = function() {
     clearTimeout(this._aiTimer);
   }
 
+  // 使用异步 AI（Web Worker 或同步回退），保留最小延迟让 UI 更新
   this._aiTimer = setTimeout(function() {
-    var aiMove = getAIMove(self.state.board, self.state.difficulty);
+    getAIMoveAsync(self.state.board, self.state.difficulty).then(function(aiMove) {
+      if (aiMove) {
+        self.placeStone(aiMove.row, aiMove.col);
+      }
 
-    if (aiMove) {
-      self.placeStone(aiMove.row, aiMove.col);
-    }
-
-    self.state.isAIThinking = false;
-    self._aiTimer = null;
-    self.emit('aiThinkingEnded');
-
-  }, 500);
+      self.state.isAIThinking = false;
+      self._aiTimer = null;
+      self.emit('aiThinkingEnded');
+    });
+  }, 100); // 从 500ms 降为 100ms — Worker 响应更快
 };
 
 /**
