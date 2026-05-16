@@ -442,6 +442,121 @@ describe('TimerController', () => {
   });
 });
 
+// ── ReplayManager tests ──
+describe('ReplayManager', () => {
+
+  function createTestReplay() {
+    const rm = new ReplayManager();
+    const moves = [
+      { row: 7, col: 7, player: 1 },
+      { row: 0, col: 0, player: 2 },
+      { row: 7, col: 8, player: 1 },
+      { row: 0, col: 1, player: 2 },
+      { row: 7, col: 9, player: 1 }
+    ];
+    // Save directly to localStorage for testing
+    const replays = [{
+      id: 'test-1',
+      gameMode: 'pvp',
+      difficulty: 'medium',
+      moves: moves,
+      timestamp: Date.now()
+    }];
+    rm._saveReplays(replays);
+    return { rm, moves };
+  }
+
+  it('startReplay sets up state', () => {
+    const { rm } = createTestReplay();
+    let stepCount = 0;
+    rm.startReplay('test-1', () => { stepCount++; }, () => {});
+    assert.ok(rm._replayData !== null, 'replayData loaded');
+    assert.equal(rm._replayIndex, 1, 'auto-plays first step immediately');
+    assert.equal(stepCount, 1, 'onStep called once');
+    rm.stopReplay();
+  });
+
+  it('pauseReplay pauses auto-advance', () => {
+    const { rm } = createTestReplay();
+    rm.startReplay('test-1', () => {}, () => {});
+    rm.pauseReplay();
+    assert.ok(rm._replayPaused, 'paused flag set');
+    assert.equal(rm._replayTimer, null, 'timer cleared');
+    rm.stopReplay();
+  });
+
+  it('resumeReplay continues auto-advance', () => {
+    const { rm } = createTestReplay();
+    let steps = [];
+    rm.startReplay('test-1', (m) => steps.push(m), () => {});
+    rm.pauseReplay();
+    const beforeCount = steps.length;
+    rm.resumeReplay();
+    // After resume, auto-play continues. Pause immediately to check
+    setTimeout(() => {
+      rm.pauseReplay();
+    }, 50);
+    // Can't easily verify async, just check state
+    assert.equal(rm._replayPaused, false, 'paused flag cleared after resume');
+    rm.stopReplay();
+  });
+
+  it('stepForward advances one step and pauses', () => {
+    const { rm, moves } = createTestReplay();
+    let steps = [];
+    rm.startReplay('test-1', (m) => steps.push(m), () => {});
+    rm.pauseReplay();
+    const before = steps.length;
+    rm.stepForward();
+    assert.equal(steps.length, before + 1, 'advanced one step');
+    assert.ok(rm._replayPaused, 'paused after stepForward');
+    rm.stopReplay();
+  });
+
+  it('stepBackward goes back one step and re-renders', () => {
+    const { rm } = createTestReplay();
+    let steps = [];
+    let cleared = false;
+    rm.startReplay('test-1',
+      (m) => steps.push(m),
+      () => {},
+      () => { cleared = true; }
+    );
+    rm.pauseReplay();
+    steps = []; // reset for clean measurement
+    rm.stepForward();
+    rm.stepForward();
+    assert.equal(steps.length, 2, 'two steps forward');
+    steps = [];
+    rm.stepBackward();
+    assert.ok(cleared, 'onClear called');
+    // Re-renders from index 0 to index-1 (index was 3, now 2, so plays 0,1 = 2 stones)
+    assert.equal(steps.length, 2, 're-rendered from start to index-1');
+    rm.stopReplay();
+  });
+
+  it('getReplayProgress returns correct state', () => {
+    const { rm } = createTestReplay();
+    rm.startReplay('test-1', () => {}, () => {});
+    rm.pauseReplay();
+    const prog = rm.getReplayProgress();
+    assert.equal(prog.total, 5, 'total moves');
+    assert.ok(prog.current >= 1, 'current >= 1 after first step');
+    rm.stopReplay();
+  });
+
+  it('stepForward at last move fires onComplete', () => {
+    const { rm, moves } = createTestReplay();
+    let completed = false;
+    rm.startReplay('test-1', () => {}, () => { completed = true; });
+    rm.pauseReplay();
+    // Step through all remaining
+    for (let i = 0; i < moves.length; i++) rm.stepForward();
+    assert.ok(completed, 'onComplete fired at end');
+    rm.stopReplay();
+  });
+});
+
 // === Summary ===
 console.log(`\n═══════════════════════════════`);
 console.log(`  Total: ${passed + failed}`);

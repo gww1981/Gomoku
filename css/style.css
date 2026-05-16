@@ -425,6 +425,33 @@
     display: none;
 }
 
+/* ==================== 回放控制按钮 ==================== */
+.replay-ctrl {
+    padding: 6px 10px;
+    background: var(--btn-bg);
+    color: var(--text-light);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+}
+.replay-ctrl:hover:not(:disabled) {
+    background: var(--btn-hover);
+}
+.replay-ctrl:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.replay-progress {
+    display: inline-block;
+    min-width: 48px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: bold;
+}
+
 /* ==================== 响应式设计 ==================== */
 @media (max-width: 500px) {
     .game-container {

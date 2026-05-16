@@ -355,6 +355,12 @@ function updateStatusBar() {
   const boardEl = document.getElementById('board');
   if (!statusEl || !actionsEl) return;
 
+  // 回放状态下，由 updateReplayControls 管理按钮，不覆盖
+  if (GameState.isReplaying) {
+    boardEl.classList.remove('waiting');
+    return;
+  }
+
   if (!GameState.isStarted) {
     // === 未开始状态 ===
     boardEl.classList.add('waiting');
