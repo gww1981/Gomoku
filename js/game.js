@@ -9,6 +9,8 @@ class Board {
     this.grid = Array.from({ length: size }, () => Array(size).fill(0));
     this.currentPlayer = 1; // 1: 黑方, 2: 白方
     this.moveCount = 0;
+    this._cacheVersion = 0;
+    this._evalCache = new Map();
   }
 
   /**
@@ -28,7 +30,14 @@ class Board {
     this.grid[row][col] = player;
     this.currentPlayer = player === 1 ? 2 : 1;
     this.moveCount++;
+    this._invalidateCache();
     return true;
+  }
+
+  /** 使评价缓存失效 */
+  _invalidateCache() {
+    this._cacheVersion++;
+    this._evalCache.clear();
   }
 
   /**
@@ -76,11 +85,17 @@ class Board {
    * @returns {{positions: Array<{row, col}>, openEnds: [boolean, boolean]}}
    */
   getLine(row, col, dr, dc, player) {
-    const positions = [{ row, col }];
+    const positions = [];
+
+    // Only include starting position if it's the player's stone
+    let r, c;
+    if (this.grid[row][col] === player) {
+      positions.push({ row, col });
+    }
 
     // 正向查找
-    let r = row + dr;
-    let c = col + dc;
+    r = row + dr;
+    c = col + dc;
     while (r >= 0 && r < this.size && c >= 0 && c < this.size && this.grid[r][c] === player) {
       positions.push({ row: r, col: c });
       r += dr;
@@ -115,6 +130,7 @@ class Board {
     this.grid = Array.from({ length: this.size }, () => Array(this.size).fill(0));
     this.currentPlayer = 1;
     this.moveCount = 0;
+    this._invalidateCache();
   }
 
   /**
@@ -133,6 +149,7 @@ class Board {
     this.grid[row][col] = 0;
     this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
     this.moveCount--;
+    this._invalidateCache();
     return true;
   }
 
@@ -219,6 +236,9 @@ class Board {
    * @returns {number} 攻防总分
    */
   evaluatePosition(row, col, player) {
+    const key = `${row},${col},${player},${this._cacheVersion}`;
+    if (this._evalCache.has(key)) return this._evalCache.get(key);
+
     const opponent = player === 1 ? 2 : 1;
 
     const directions = [
@@ -265,8 +285,9 @@ class Board {
       } else if (oppCount === 2) {
         totalScore += oppOpenEnds === 2 ? 100 : (oppOpenEnds === 1 ? 10 : 0);
       }
-    }
+}
 
+    this._evalCache.set(key, totalScore);
     return totalScore;
   }
 }
