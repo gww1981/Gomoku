@@ -143,11 +143,12 @@ class Board {
     if (row < 0 || row >= this.size || col < 0 || col >= this.size) {
       return false;
     }
-    if (this.grid[row][col] === 0) {
+    const cellPlayer = this.grid[row][col];
+    if (cellPlayer === 0) {
       return false;
     }
     this.grid[row][col] = 0;
-    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+    this.currentPlayer = cellPlayer;
     this.moveCount--;
     this._invalidateCache();
     return true;

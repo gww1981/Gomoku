@@ -23,12 +23,16 @@ function getEasyMove(board) {
   const emptyPositions = board.getEmptyPositions();
   if (emptyPositions.length === 0) return null;
 
+  // 保存当前状态，确保模拟不污染游戏状态
+  const savedCP = board.currentPlayer;
+  const savedMC = board.moveCount;
+
   // 1. 检查能否立刻获胜
   for (const pos of emptyPositions) {
     board.placeStone(pos.row, pos.col, AI_PLAYER);
     const winLine = board.checkWin(pos.row, pos.col);
     board.undoMove(pos.row, pos.col);
-    if (winLine) return pos;
+    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
   }
 
   // 2. 检查对手能否立刻获胜（阻挡）
@@ -36,12 +40,14 @@ function getEasyMove(board) {
     board.placeStone(pos.row, pos.col, PLAYER);
     const winLine = board.checkWin(pos.row, pos.col);
     board.undoMove(pos.row, pos.col);
-    if (winLine) return pos;
+    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
   }
 
   // 3. 用候选位置（已有棋子附近）做启发式评分
   let candidates = getCandidateMoves(board);
   if (candidates.length === 0) {
+    board.currentPlayer = savedCP;
+    board.moveCount = savedMC;
     return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
   }
 
@@ -59,12 +65,16 @@ function getEasyMove(board) {
   const topN = scored.slice(0, Math.min(5, scored.length));
   const weightSum = topN.reduce((sum, m) => sum + Math.max(1, m.score), 0);
   let rand = Math.random() * weightSum;
+  let result = topN[0];
   for (const move of topN) {
     rand -= Math.max(1, move.score);
-    if (rand <= 0) return move;
+    if (rand <= 0) { result = move; break; }
   }
 
-  return topN[0]; // 保底
+  // 恢复被模拟改动的状态
+  board.currentPlayer = savedCP;
+  board.moveCount = savedMC;
+  return result;
 }
 
 /**
