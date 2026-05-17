@@ -157,7 +157,16 @@ GameController.prototype._triggerAIMove = function() {
 
   // 保留 100ms 延迟让 UI 有时间刷新为 "AI 正在思考..."
   this._aiTimer = setTimeout(function() {
+    // 安全兜底：AI 超过 28 秒未响应，强制恢复
+    var safetyTimer = setTimeout(function() {
+      console.warn('AI timeout, force reset');
+      self.state.isAIThinking = false;
+      self._aiTimer = null;
+      self.emit('aiThinkingEnded');
+    }, 28000);
+
     getAIMoveAsync(self.state.board, self.state.difficulty).then(function(aiMove) {
+      clearTimeout(safetyTimer);
       if (aiMove) {
         self.placeStone(aiMove.row, aiMove.col);
       }
