@@ -315,10 +315,15 @@ function _createAIWorker() {
       }
     };
     _aiWorker.onerror = function() {
-      _aiWorker = null; // 回退到同步模式
+      // Worker 出错 → 拒绝所有挂起请求，回退到同步模式
+      _aiWorkerCallbacks.forEach(function(resolve) {
+        resolve(null);
+      });
+      _aiWorkerCallbacks.clear();
+      _aiWorker = null;
     };
   } catch (e) {
-    _aiWorker = null; // Worker 不可用
+    _aiWorker = null;
   }
 }
 
