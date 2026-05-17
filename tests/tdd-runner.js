@@ -195,20 +195,47 @@ describe('AI', () => {
     assert.ok(blocks, `Expected block at (7,6) or (7,11), got (${move.row},${move.col})`);
   });
 
-  it('getMediumMove blocks opponent 3-in-a-row threat', () => {
-    const board = new Board(15);
-    // P1 has 3 in a row horizontally: AI (P2) should block
-    board.placeStone(7, 7, 1);  // P1
-    board.placeStone(0, 0, 2);  // P2
-    board.placeStone(7, 8, 1);  // P1
-    board.placeStone(0, 1, 2);  // P2
-    board.placeStone(7, 9, 1);  // P1 — 3 in a row
+  it('getEasyMove does NOT always block opponent 3-in-a-row (gap vs Medium)', () => {
+    // Easy has 50% random + radius=1 + attack-only scoring
+    // It should NOT consistently block 3-in-a-row threats
+    let blockedCount = 0;
+    const TRIALS = 20;
+    for (let t = 0; t < TRIALS; t++) {
+      const board = new Board(15);
+      board.placeStone(7, 7, 1);  // P1
+      board.placeStone(0, 0, 2);  // P2
+      board.placeStone(7, 8, 1);  // P1
+      board.placeStone(0, 1, 2);  // P2
+      board.placeStone(7, 9, 1);  // P1 — 3 in a row
 
-    const move = getAIMove(board, 'medium');
-    assert.ok(move !== null, 'AI makes a move');
-    // AI should block at (7,6) or (7,10)
-    const blocksThree = (move.row === 7 && (move.col === 6 || move.col === 10));
-    assert.ok(blocksThree, `Expected block at (7,6) or (7,10), got (${move.row},${move.col})`);
+      const move = getAIMove(board, 'easy');
+      if (move && move.row === 7 && (move.col === 6 || move.col === 10)) {
+        blockedCount++;
+      }
+    }
+    // With 50% random, probability all 20 block = 0.5^20 ≈ 0.0001%
+    // If it blocks more than 18/20, something is wrong
+    assert.ok(blockedCount < TRIALS,
+      `Expected at least 1 miss, but blocked ${blockedCount}/${TRIALS}`);
+  });
+
+  it('getMediumMove always blocks opponent 3-in-a-row threat', () => {
+    // Medium picks absolute best move with attack+defense scoring
+    // It should ALWAYS block 3-in-a-row threats
+    const TRIALS = 10;
+    for (let t = 0; t < TRIALS; t++) {
+      const board = new Board(15);
+      board.placeStone(7, 7, 1);  // P1
+      board.placeStone(0, 0, 2);  // P2
+      board.placeStone(7, 8, 1);  // P1
+      board.placeStone(0, 1, 2);  // P2
+      board.placeStone(7, 9, 1);  // P1 — 3 in a row
+
+      const move = getAIMove(board, 'medium');
+      assert.ok(move !== null, 'AI makes a move');
+      const blocks = (move.row === 7 && (move.col === 6 || move.col === 10));
+      assert.ok(blocks, `Trial ${t}: Expected block at (7,6) or (7,10), got (${move.row},${move.col})`);
+    }
   });
 
   it('getCandidateMoves returns empty cells near existing stones', () => {
@@ -226,13 +253,48 @@ describe('AI', () => {
     board.placeStone(7, 7, 1);
     board.placeStone(10, 3, 2);
     const candidates = getCandidateMoves(board);
-    // Every candidate should be within distance 2 of (7,7) or (10,3)
     candidates.forEach(({row, col}) => {
       const d1 = Math.max(Math.abs(row - 7), Math.abs(col - 7));
       const d2 = Math.max(Math.abs(row - 10), Math.abs(col - 3));
       assert.ok(d1 <= 2 || d2 <= 2,
         `(${row},${col}) is within 2 of (7,7) (d=${d1}) or (10,3) (d=${d2})`);
     });
+  });
+
+  it('getNearMoves radius=1 returns only adjacent cells', () => {
+    const board = new Board(15);
+    board.placeStone(7, 7, 1);
+    const near = getNearMoves(board, 1);
+    assert.ok(near.length > 0, 'has adjacent candidates');
+    near.forEach(({row, col}) => {
+      const d = Math.max(Math.abs(row - 7), Math.abs(col - 7));
+      assert.ok(d <= 1, `(${row},${col}) adjacency=${d} expected <=1`);
+      assert.equal(board.getStone(row, col), 0, `(${row},${col}) is empty`);
+    });
+    // Manually verify (7,7)'s 8 neighbors + center-adjacent edge cells
+    const expected = [
+      {r:6,c:6},{r:6,c:7},{r:6,c:8},
+      {r:7,c:6},         {r:7,c:8},
+      {r:8,c:6},{r:8,c:7},{r:8,c:8}
+    ];
+    assert.equal(near.length, expected.length, '8 adjacent cells');
+  });
+
+  it('getEasyMove sometimes picks a random far-away position (not always near)', () => {
+    const board = new Board(15);
+    board.placeStone(7, 7, 1);
+    let farCount = 0;
+    const TRIALS = 30;
+    for (let t = 0; t < TRIALS; t++) {
+      const move = getAIMove(board, 'easy');
+      if (move) {
+        const d = Math.max(Math.abs(move.row - 7), Math.abs(move.col - 7));
+        if (d > 1) farCount++;
+      }
+    }
+    // With 50% random chance, far picks should happen frequently
+    assert.ok(farCount > 2, `Expected some far picks, got ${farCount}/${TRIALS}`);
+  });
   });
 
   it('getHardMove with move ordering finds winning move', () => {
@@ -306,7 +368,6 @@ describe('AI', () => {
     assert.ok('row' in move && 'col' in move);
     assert.equal(board.getStone(move.row, move.col), 0);
   });
-});
 
 // ── GameController tests ──
 describe('GameController', () => {
