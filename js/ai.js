@@ -16,95 +16,12 @@ const DIRECTIONS = [
 ];
 
 /**
- * 简单难度：增强版 — 具备基本攻防意识
- * 会完成连五、阻挡对手、并有随机性保持简单
+ * 获取指定半径内的候选空位
+ * @param {Board} board - 棋盘
+ * @param {number} radius - 切比雪夫距离 (1=相邻格, 2=两格内)
+ * @returns {Array<{row, col}>} 候选位置
  */
-function getEasyMove(board) {
-  const emptyPositions = board.getEmptyPositions();
-  if (emptyPositions.length === 0) return null;
-
-  // 保存当前状态，确保模拟不污染游戏状态
-  const savedCP = board.currentPlayer;
-  const savedMC = board.moveCount;
-
-  // 1. 检查能否立刻获胜
-  for (const pos of emptyPositions) {
-    board.placeStone(pos.row, pos.col, AI_PLAYER);
-    const winLine = board.checkWin(pos.row, pos.col);
-    board.undoMove(pos.row, pos.col);
-    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
-  }
-
-  // 2. 检查对手能否立刻获胜（阻挡）
-  for (const pos of emptyPositions) {
-    board.placeStone(pos.row, pos.col, PLAYER);
-    const winLine = board.checkWin(pos.row, pos.col);
-    board.undoMove(pos.row, pos.col);
-    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
-  }
-
-  // 3. 用候选位置（已有棋子附近）做启发式评分
-  let candidates = getCandidateMoves(board);
-  if (candidates.length === 0) {
-    board.currentPlayer = savedCP;
-    board.moveCount = savedMC;
-    return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
-  }
-
-  const scored = candidates.map(pos => ({
-    row: pos.row,
-    col: pos.col,
-    score: board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
-         + board.evaluatePosition(pos.row, pos.col, PLAYER)
-  }));
-
-  // 按评分降序排列
-  scored.sort((a, b) => b.score - a.score);
-
-  // 从 top 5 中加权随机选择（保持简单：不完全最优）
-  const topN = scored.slice(0, Math.min(5, scored.length));
-  const weightSum = topN.reduce((sum, m) => sum + Math.max(1, m.score), 0);
-  let rand = Math.random() * weightSum;
-  let result = topN[0];
-  for (const move of topN) {
-    rand -= Math.max(1, move.score);
-    if (rand <= 0) { result = move; break; }
-  }
-
-  // 恢复被模拟改动的状态
-  board.currentPlayer = savedCP;
-  board.moveCount = savedMC;
-  return result;
-}
-
-/**
- * 中等难度：启发式评分
- */
-function getMediumMove(board) {
-  const emptyPositions = board.getEmptyPositions();
-  if (emptyPositions.length === 0) return null;
-
-  let bestScore = -Infinity;
-  let bestMove = emptyPositions[0];
-
-  for (const pos of emptyPositions) {
-    const attackScore = board.evaluatePosition(pos.row, pos.col, AI_PLAYER);
-    const defenseScore = board.evaluatePosition(pos.row, pos.col, PLAYER);
-    const totalScore = attackScore + defenseScore;
-
-    if (totalScore > bestScore) {
-      bestScore = totalScore;
-      bestMove = pos;
-    }
-  }
-
-  return bestMove;
-}
-
-/**
- * 获取候选落子位置（减少搜索空间）
- */
-function getCandidateMoves(board) {
+function getNearMoves(board, radius) {
   const size = board.size;
   const visited = Array.from({ length: size }, () => Array(size).fill(false));
   const candidates = [];
@@ -113,8 +30,9 @@ function getCandidateMoves(board) {
   for (let r = 0; r < size; r++) {
     for (let c = 0; c < size; c++) {
       if (board.getStone(r, c) !== EMPTY) {
-        for (let dr = -2; dr <= 2; dr++) {
-          for (let dc = -2; dc <= 2; dc++) {
+        for (let dr = -radius; dr <= radius; dr++) {
+          for (let dc = -radius; dc <= radius; dc++) {
+            if (dr === 0 && dc === 0) continue;
             const nr = r + dr;
             const nc = c + dc;
             if (nr >= 0 && nr < size && nc >= 0 && nc < size
@@ -134,6 +52,111 @@ function getCandidateMoves(board) {
     return [{ row: center, col: center }];
   }
   return candidates;
+}
+
+/**
+ * 简单难度：新手水平
+ * - 会连五、会堵四连
+ * - 50% 选 radius=1 内进攻分最高的，50% 纯随机
+ * - 不主动防守三连及以下
+ */
+function getEasyMove(board) {
+  const emptyPositions = board.getEmptyPositions();
+  if (emptyPositions.length === 0) return null;
+
+  const savedCP = board.currentPlayer;
+  const savedMC = board.moveCount;
+
+  // 1. 检查能否立刻获胜 → 100%
+  for (const pos of emptyPositions) {
+    board.placeStone(pos.row, pos.col, AI_PLAYER);
+    const winLine = board.checkWin(pos.row, pos.col);
+    board.undoMove(pos.row, pos.col);
+    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
+  }
+
+  // 2. 阻挡对手连五 → 100%
+  for (const pos of emptyPositions) {
+    board.placeStone(pos.row, pos.col, PLAYER);
+    const winLine = board.checkWin(pos.row, pos.col);
+    board.undoMove(pos.row, pos.col);
+    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
+  }
+
+  // 3. 50% 从 radius=1 候选选进攻分最高, 50% 纯随机
+  if (Math.random() < 0.5) {
+    let candidates = getNearMoves(board, 1);
+    if (candidates.length === 0) {
+      board.currentPlayer = savedCP; board.moveCount = savedMC;
+      return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+    }
+    let best = candidates[0];
+    let bestScore = board.evaluatePosition(best.row, best.col, AI_PLAYER);
+    for (const pos of candidates) {
+      const score = board.evaluatePosition(pos.row, pos.col, AI_PLAYER);
+      if (score > bestScore) { bestScore = score; best = pos; }
+    }
+    board.currentPlayer = savedCP; board.moveCount = savedMC;
+    return best;
+  }
+
+  // 纯随机
+  board.currentPlayer = savedCP; board.moveCount = savedMC;
+  return emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
+}
+
+/**
+ * 中等难度：业余玩家水平
+ * - 会连五、会堵四连和三连
+ * - radius=2 候选 + 进攻+防守评分，绝对最优
+ */
+function getMediumMove(board) {
+  const emptyPositions = board.getEmptyPositions();
+  if (emptyPositions.length === 0) return null;
+
+  const savedCP = board.currentPlayer;
+  const savedMC = board.moveCount;
+
+  // 1. 获胜
+  for (const pos of emptyPositions) {
+    board.placeStone(pos.row, pos.col, AI_PLAYER);
+    const winLine = board.checkWin(pos.row, pos.col);
+    board.undoMove(pos.row, pos.col);
+    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
+  }
+
+  // 2. 阻挡对手连五
+  for (const pos of emptyPositions) {
+    board.placeStone(pos.row, pos.col, PLAYER);
+    const winLine = board.checkWin(pos.row, pos.col);
+    board.undoMove(pos.row, pos.col);
+    if (winLine) { board.currentPlayer = savedCP; board.moveCount = savedMC; return pos; }
+  }
+
+  // 3. radius=2 候选 + 进攻+防守评分
+  let candidates = getNearMoves(board, 2);
+  if (candidates.length === 0) {
+    board.currentPlayer = savedCP; board.moveCount = savedMC;
+    return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+  }
+
+  let best = candidates[0];
+  let bestScore = -Infinity;
+  for (const pos of candidates) {
+    const score = board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
+                + board.evaluatePosition(pos.row, pos.col, PLAYER);
+    if (score > bestScore) { bestScore = score; best = pos; }
+  }
+
+  board.currentPlayer = savedCP; board.moveCount = savedMC;
+  return best;
+}
+
+/**
+ * 获取候选落子位置（减少搜索空间）
+ */
+function getCandidateMoves(board) {
+  return getNearMoves(board, 2);
 }
 
 /**

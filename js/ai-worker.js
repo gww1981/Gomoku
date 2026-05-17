@@ -97,7 +97,7 @@ class WorkerBoard {
     return positions;
   }
 
-  getCandidateMoves() {
+  getNearMoves(radius) {
     const size = this.size;
     const visited = Array.from({ length: size }, () => Array(size).fill(false));
     const candidates = [];
@@ -105,8 +105,9 @@ class WorkerBoard {
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
         if (this.grid[r][c] !== EMPTY) {
-          for (let dr = -2; dr <= 2; dr++) {
-            for (let dc = -2; dc <= 2; dc++) {
+          for (let dr = -radius; dr <= radius; dr++) {
+            for (let dc = -radius; dc <= radius; dc++) {
+              if (dr === 0 && dc === 0) continue;
               const nr = r + dr, nc = c + dc;
               if (nr >= 0 && nr < size && nc >= 0 && nc < size
                   && this.grid[nr][nc] === EMPTY && !visited[nr][nc]) {
@@ -126,6 +127,10 @@ class WorkerBoard {
     return candidates;
   }
 
+  getCandidateMoves() {
+    return this.getNearMoves(2);
+  }
+
   simulateMove(row, col, player) {
     const newGrid = this.grid.map(r => [...r]);
     newGrid[row][col] = player;
@@ -140,52 +145,65 @@ function getEasyMove(board) {
   const empty = board.getEmptyPositions();
   if (empty.length === 0) return null;
 
-  // 检查能否立刻获胜
+  // 1. 获胜 → 100%
   for (const pos of empty) {
     const nb = board.simulateMove(pos.row, pos.col, AI_PLAYER);
     if (nb.checkWinner(pos.row, pos.col) === AI_PLAYER) return pos;
   }
 
-  // 阻挡对手立刻获胜
+  // 2. 阻挡对手连五 → 100%
   for (const pos of empty) {
     const nb = board.simulateMove(pos.row, pos.col, PLAYER);
     if (nb.checkWinner(pos.row, pos.col) === PLAYER) return pos;
   }
 
-  // 用候选位置做启发式评分 + 加权随机
-  let candidates = board.getCandidateMoves();
-  if (candidates.length === 0) {
-    return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+  // 3. 50% radius=1 候选攻分最高, 50% 纯随机
+  if (Math.random() < 0.5) {
+    let candidates = board.getNearMoves(1);
+    if (candidates.length === 0) {
+      return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+    }
+    let best = candidates[0];
+    let bestScore = board.evaluatePosition(best.row, best.col, AI_PLAYER);
+    for (const pos of candidates) {
+      const score = board.evaluatePosition(pos.row, pos.col, AI_PLAYER);
+      if (score > bestScore) { bestScore = score; best = pos; }
+    }
+    return best;
   }
 
-  const scored = candidates.map(pos => ({
-    row: pos.row, col: pos.col,
-    score: board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
-         + board.evaluatePosition(pos.row, pos.col, PLAYER)
-  }));
-  scored.sort((a, b) => b.score - a.score);
-
-  const topN = scored.slice(0, Math.min(5, scored.length));
-  const weightSum = topN.reduce((sum, m) => sum + Math.max(1, m.score), 0);
-  let rand = Math.random() * weightSum;
-  for (const move of topN) {
-    rand -= Math.max(1, move.score);
-    if (rand <= 0) return move;
-  }
-  return topN[0];
+  return empty[Math.floor(Math.random() * empty.length)];
 }
 
 function getMediumMove(board) {
   const empty = board.getEmptyPositions();
   if (empty.length === 0) return null;
-  let bestScore = -Infinity;
-  let bestMove = empty[0];
+
+  // 1. 获胜 → 100%
   for (const pos of empty) {
-    const score = board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
-               + board.evaluatePosition(pos.row, pos.col, PLAYER);
-    if (score > bestScore) { bestScore = score; bestMove = pos; }
+    const nb = board.simulateMove(pos.row, pos.col, AI_PLAYER);
+    if (nb.checkWinner(pos.row, pos.col) === AI_PLAYER) return pos;
   }
-  return bestMove;
+
+  // 2. 阻挡对手连五 → 100%
+  for (const pos of empty) {
+    const nb = board.simulateMove(pos.row, pos.col, PLAYER);
+    if (nb.checkWinner(pos.row, pos.col) === PLAYER) return pos;
+  }
+
+  // 3. radius=2 候选 + 进攻+防守评分，绝对最优
+  let candidates = board.getNearMoves(2);
+  if (candidates.length === 0) {
+    return { row: Math.floor(board.size / 2), col: Math.floor(board.size / 2) };
+  }
+  let best = candidates[0];
+  let bestScore = -Infinity;
+  for (const pos of candidates) {
+    const score = board.evaluatePosition(pos.row, pos.col, AI_PLAYER)
+                + board.evaluatePosition(pos.row, pos.col, PLAYER);
+    if (score > bestScore) { bestScore = score; best = pos; }
+  }
+  return best;
 }
 
 function evaluateBoardScore(board, player) {
