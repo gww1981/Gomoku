@@ -145,13 +145,17 @@ GameController.prototype.placeStone = function(row, col) {
 GameController.prototype._triggerAIMove = function() {
   var self = this;
   this.state.isAIThinking = true;
+
+  // AI 思考时暂停计时器（避免困难 AI 耗时太长导致超时）
+  this.timerController.stop();
+
   this.emit('aiThinkingStarted');
 
   if (this._aiTimer) {
     clearTimeout(this._aiTimer);
   }
 
-  // 使用异步 AI（Web Worker 或同步回退），保留最小延迟让 UI 更新
+  // 保留 100ms 延迟让 UI 有时间刷新为 "AI 正在思考..."
   this._aiTimer = setTimeout(function() {
     getAIMoveAsync(self.state.board, self.state.difficulty).then(function(aiMove) {
       if (aiMove) {
@@ -162,7 +166,7 @@ GameController.prototype._triggerAIMove = function() {
       self._aiTimer = null;
       self.emit('aiThinkingEnded');
     });
-  }, 100); // 从 500ms 降为 100ms — Worker 响应更快
+  }, 100);
 };
 
 /**

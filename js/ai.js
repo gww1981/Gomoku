@@ -329,15 +329,16 @@ function _createAIWorker() {
  * @returns {Promise<{row: number, col: number} | null>}
  */
 function getAIMoveAsync(board, difficulty) {
-  // Worker 不可用（Node.js / 不支持）：同步回退
-  if (typeof Worker === 'undefined' || _aiWorker === null) {
+  // Worker 不可用（Node.js）：同步回退
+  if (typeof Worker === 'undefined') {
     return Promise.resolve(getAIMove(board, difficulty));
   }
 
-  // 懒初始化 Worker
+  // 懒初始化 Worker（仅在浏览器中执行一次）
   if (!_aiWorker) {
     _createAIWorker();
     if (!_aiWorker) {
+      // Worker 创建失败（如 file:// 协议），同步回退
       return Promise.resolve(getAIMove(board, difficulty));
     }
   }
